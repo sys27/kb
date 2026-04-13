@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "backend/"
+    schedule:
+      interval: "daily"
+    assignees:
+      - "sys27"
+
+  - package-ecosystem: "npm"
+    directory: "frontend/"
+    schedule:
+      interval: "daily"
+    assignees:
+      - "sys27"
+
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: "daily"
+    assignees:
+      - "sys27"
