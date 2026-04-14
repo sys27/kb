@@ -1,0 +1,7 @@
+{
+	"$schema": "https://svelte.dev/opencode/schema.json",
+	"mcp": {
+		"type": "local",
+		"enabled": true
+	}
+}

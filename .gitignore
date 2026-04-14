@@ -42,3 +42,4 @@ coverage.cobertura.xml
 *.playlist
 
 Thumbs.db
+*.db
