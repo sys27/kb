@@ -19,12 +19,11 @@ WORKDIR /src
 COPY ["./frontend/package.json", "./frontend/package-lock.json", "./"]
 RUN npm ci
 COPY ["./frontend/", "./"]
-#RUN npm run lint
-#RUN npm run build
+RUN npm run build
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.5-alpine3.23 AS final
 EXPOSE 80
-#HEALTHCHECK --interval=5s --timeout=5s CMD wget http://localhost/health -q -O - > /dev/null 2>&1
+HEALTHCHECK --interval=5s --timeout=5s CMD wget http://localhost/health -q -O - > /dev/null 2>&1
 
 ENV ASPNETCORE_ENVIRONMENT="Production"
 ENV ASPNETCORE_URLS="http://+:80"
@@ -34,5 +33,5 @@ USER kb
 
 WORKDIR /app
 COPY --from=publish /app/publish .
-#COPY --from=node /src ./wwwroot
-ENTRYPOINT ["dotnet", "backend.dll"]
+COPY --from=node /src/dist ./wwwroot
+ENTRYPOINT ["dotnet", "Backend.dll"]

@@ -1,6 +1,7 @@
 using Backend;
 using Backend.Chats;
 using Backend.Messages;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Scalar.AspNetCore;
@@ -34,6 +35,8 @@ builder.Services
             });
     });
 
+builder.Services.AddSpaStaticFiles(options => options.RootPath = "wwwroot");
+
 var app = builder.Build();
 
 app.UseExceptionHandler();
@@ -46,5 +49,11 @@ app.MapScalarApiReference();
 app.MapGroup("/api")
     .MapChatEndpoints()
     .MapMessageEndpoints();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseSpaStaticFiles();
+    app.UseSpa(_ => { });
+}
 
 app.Run();

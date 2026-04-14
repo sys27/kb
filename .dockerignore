@@ -25,5 +25,6 @@
 **/*.db-shm
 **/*.db-wal
 **/dist
+**/wwwroot
 LICENSE
 README.md
