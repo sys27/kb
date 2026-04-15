@@ -14,9 +14,22 @@ Accept: application/json
 Content-Type: application/json
 
 {
-  "title": "Test 1"
+  "title": "Chat 1"
 }
 
 ### Delete Chat
 DELETE {{Backend_HostAddress}}/api/chats/__
 Accept: application/json
+
+### Get Messages
+GET {{Backend_HostAddress}}/api/chats/1/messages
+Accept: application/json
+
+### Send Message
+POST {{Backend_HostAddress}}/api/chats/1/messages
+Accept: application/json
+Content-Type: application/json
+
+{
+  "text": "Hi."
+}

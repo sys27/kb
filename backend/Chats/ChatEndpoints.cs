@@ -23,6 +23,20 @@ public static class ChatEndpoints
             .WithName("GetChats")
             .WithSummary("Get all chats");
 
+        group.MapGet("/{id:int}", async (int id, KbDbContext context, CancellationToken cancellationToken) =>
+            {
+                var chat = await context.Chats.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+                if (chat is null)
+                    return Results.NotFound();
+
+                return Results.Ok(chat.ToResponse());
+            })
+            .Produces<ChatListResponse>()
+            .Produces(404)
+            .ProducesProblem(500)
+            .WithName("GetChat")
+            .WithSummary("Get a chat by id");
+
         group.MapPost("", async (CreateChatRequest request, KbDbContext context, CancellationToken cancellationToken) =>
             {
                 var chat = request.ToEntity();
@@ -37,19 +51,29 @@ public static class ChatEndpoints
             .WithName("CreateChat")
             .WithSummary("Create a new chat");
 
-        group.MapGet("/{id:int}", async (int id, KbDbContext context, CancellationToken cancellationToken) =>
+        group.MapPut("/{id:int}", async (
+                int id,
+                UpdateChatRequest request,
+                KbDbContext context,
+                CancellationToken cancellationToken) =>
             {
-                var chat = await context.Chats.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+                var chat = await context.Chats.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
                 if (chat is null)
                     return Results.NotFound();
 
-                return Results.Ok(chat.ToResponse());
+                chat.Title = request.Title;
+                await context.SaveChangesAsync(cancellationToken);
+
+                var response = chat.ToResponse();
+
+                return Results.Ok(response);
             })
             .Produces<ChatListResponse>()
-            .Produces(404)
+            .ProducesProblem(400)
+            .ProducesProblem(404)
             .ProducesProblem(500)
-            .WithName("GetChat")
-            .WithSummary("Get a chat by id");
+            .WithName("UpdateChat")
+            .WithSummary("Update a chat by id");
 
         group.MapDelete("/{id:int}", async (int id, KbDbContext context, CancellationToken cancellationToken) =>
             {

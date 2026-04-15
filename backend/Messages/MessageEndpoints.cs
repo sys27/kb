@@ -8,7 +8,7 @@ public static class MessageEndpoints
 {
     public static IEndpointRouteBuilder MapMessageEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/chat/{chatId:int}/messages");
+        var group = app.MapGroup("/chats/{chatId:int}/messages");
 
         group.MapGet("", async (int chatId, KbDbContext context, CancellationToken cancellationToken) =>
             {
