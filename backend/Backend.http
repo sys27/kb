@@ -1,6 +1,22 @@
-@Backend_HostAddress = http://localhost:5164
+@Backend_HostAddress = http://localhost:5000
 
-GET {{Backend_HostAddress}}/weatherforecast/
+### Get Chats
+GET {{Backend_HostAddress}}/api/chats
 Accept: application/json
 
-###
+### Get Chat
+GET {{Backend_HostAddress}}/api/chats/__
+Accept: application/json
+
+### Create Chat
+POST {{Backend_HostAddress}}/api/chats
+Accept: application/json
+Content-Type: application/json
+
+{
+  "title": "Test 1"
+}
+
+### Delete Chat
+DELETE {{Backend_HostAddress}}/api/chats/__
+Accept: application/json

@@ -1,7 +1,6 @@
 using Backend;
 using Backend.Chats;
 using Backend.Messages;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Scalar.AspNetCore;

@@ -25,7 +25,6 @@ public static class ChatEndpoints
 
         group.MapPost("", async (CreateChatRequest request, KbDbContext context, CancellationToken cancellationToken) =>
             {
-                // TODO: Validate request
                 var chat = request.ToEntity();
                 await context.Chats.AddAsync(chat, cancellationToken);
                 await context.SaveChangesAsync(cancellationToken);

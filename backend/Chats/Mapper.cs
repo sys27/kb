@@ -1,9 +1,8 @@
-using Backend.Chats;
 using Backend.Chats.Requests;
 using Backend.Chats.Responses;
 using Riok.Mapperly.Abstractions;
 
-namespace Backend;
+namespace Backend.Chats;
 
 [Mapper(
     EnumMappingIgnoreCase = true,
