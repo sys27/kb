@@ -6,6 +6,13 @@ updates:
       interval: "daily"
     assignees:
       - "sys27"
+    groups:
+      ef-core:
+        patterns:
+          - "Microsoft.EntityFrameworkCore*"
+      aspnet:
+        patterns:
+          - "Microsoft.AspNetCore*"
 
   - package-ecosystem: "npm"
     directory: "frontend/"
