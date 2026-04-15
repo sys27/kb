@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0.201-alpine3.23 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.202-alpine3.23 AS build
 ARG BUILD_CONFIGURATION=Release
 
 WORKDIR /src
