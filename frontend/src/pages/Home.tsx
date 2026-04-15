@@ -1,6 +1,6 @@
-import { InputPanel } from '../../components/InputPanel';
-import { MessageList } from '../../components/MessageList';
-import { Sidebar } from '../../components/Sidebar';
+import { InputPanel } from '../components/InputPanel';
+import { MessageList } from '../components/MessageList';
+import { Sidebar } from '../components/Sidebar';
 
 export function Home() {
     return (

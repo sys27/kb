@@ -13,6 +13,7 @@ public static class ChatEndpoints
         group.MapGet("", async (KbDbContext context, CancellationToken cancellationToken) =>
             {
                 var chats = await context.Chats
+                    .OrderByDescending(x => x.Id)
                     .ToResponse()
                     .ToListAsync(cancellationToken);
 
