@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -30,9 +29,10 @@ namespace Backend.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
+                    Role = table.Column<int>(type: "INTEGER", nullable: false),
                     Kind = table.Column<int>(type: "INTEGER", nullable: false),
                     Text = table.Column<string>(type: "TEXT", nullable: false),
-                    Timestamp = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
+                    Timestamp = table.Column<long>(type: "INTEGER", nullable: false),
                     ChatId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>

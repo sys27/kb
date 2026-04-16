@@ -1,11 +1,13 @@
 using Backend;
 using Backend.Chats;
 using Backend.Messages;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSingleton<IValidateOptions<LlmOptions>, LlmOptions>();
+builder.Services.Configure<LlmOptions>(builder.Configuration.GetSection(LlmOptions.Section));
 
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
@@ -17,22 +19,8 @@ builder.Services.AddValidation();
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services
-    .AddDbContext<KbDbContext>((provider, options) =>
-    {
-        var env = provider.GetRequiredService<IHostEnvironment>();
-
-        options
-            .UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
-            .EnableDetailedErrors(env.IsDevelopment())
-            .EnableSensitiveDataLogging(env.IsDevelopment())
-            .ConfigureWarnings(w =>
-            {
-#if DEBUG
-                w.Throw(RelationalEventId.MultipleCollectionIncludeWarning);
-#endif
-            });
-    });
+builder.Services.AddDatabase(builder.Configuration, builder.Environment);
+builder.Services.AddAiClient();
 
 builder.Services.AddSpaStaticFiles(options => options.RootPath = "wwwroot");
 
