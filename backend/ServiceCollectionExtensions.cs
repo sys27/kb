@@ -51,7 +51,7 @@ public static class ServiceCollectionExtensions
 
             return client.GetChatClient(llmOptions.Value.Model).AsIChatClient();
         });
-        services.AddTransient<IEmbeddingGenerator>(provider =>
+        services.AddTransient<IEmbeddingGenerator<string, Embedding<float>>>(provider =>
         {
             var llmOptions = provider.GetRequiredService<IOptions<LlmOptions>>();
             var client = provider.GetRequiredService<OpenAIClient>();

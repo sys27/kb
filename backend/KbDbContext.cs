@@ -1,5 +1,6 @@
 using Backend.Chats;
 using Backend.Messages;
+using Backend.Projects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -36,4 +37,8 @@ public class KbDbContext : DbContext
     public DbSet<Chat> Chats { get; set; }
 
     public DbSet<Message> Messages { get; set; }
+
+    public DbSet<Project> Projects { get; set; }
+
+    public DbSet<Document> Documents { get; set; }
 }

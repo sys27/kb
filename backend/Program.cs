@@ -1,6 +1,7 @@
 using Backend;
 using Backend.Chats;
 using Backend.Messages;
+using Backend.Projects;
 using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 
@@ -35,7 +36,8 @@ app.MapScalarApiReference();
 
 app.MapGroup("/api")
     .MapChatEndpoints()
-    .MapMessageEndpoints();
+    .MapMessageEndpoints()
+    .MapProjectEndpoints();
 
 if (!app.Environment.IsDevelopment())
 {

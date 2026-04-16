@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(KbDbContext))]
-    [Migration("20260416093137_Initial")]
+    [Migration("20260416162148_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -25,11 +25,16 @@ namespace Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
 
                     b.ToTable("Chats");
                 });
@@ -63,6 +68,50 @@ namespace Backend.Migrations
                     b.ToTable("Messages");
                 });
 
+            modelBuilder.Entity("Backend.Projects.Document", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("Documents");
+                });
+
+            modelBuilder.Entity("Backend.Projects.Project", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("Backend.Chats.Chat", b =>
+                {
+                    b.HasOne("Backend.Projects.Project", "Project")
+                        .WithMany("Chats")
+                        .HasForeignKey("ProjectId");
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("Backend.Messages.Message", b =>
                 {
                     b.HasOne("Backend.Chats.Chat", "Chat")
@@ -74,9 +123,25 @@ namespace Backend.Migrations
                     b.Navigation("Chat");
                 });
 
+            modelBuilder.Entity("Backend.Projects.Document", b =>
+                {
+                    b.HasOne("Backend.Projects.Project", null)
+                        .WithMany("Documents")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Backend.Chats.Chat", b =>
                 {
                     b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("Backend.Projects.Project", b =>
+                {
+                    b.Navigation("Chats");
+
+                    b.Navigation("Documents");
                 });
 #pragma warning restore 612, 618
         }

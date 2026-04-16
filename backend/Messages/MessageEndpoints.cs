@@ -36,15 +36,13 @@ public static class MessageEndpoints
                 HttpResponse httpResponse,
                 CancellationToken cancellationToken) =>
             {
-                var message = Message.ForUser(chatId, request.Text);
-                await context.Messages.AddAsync(message, cancellationToken);
-                await context.SaveChangesAsync(cancellationToken);
-
+                var userMessage = Message.ForUser(chatId, request.Text);
                 var messages = await context.Messages
                     .Where(m => m.ChatId == chatId)
                     .ToListAsync(cancellationToken);
-                var chatMessages = messages.Select(x =>
-                    new ChatMessage(
+                var chatMessages = messages
+                    .Concat([userMessage])
+                    .Select(x => new ChatMessage(
                         x.Role switch
                         {
                             MessageRole.System => ChatRole.System,
@@ -84,14 +82,16 @@ public static class MessageEndpoints
                     }
                 }
 
+                await context.Messages.AddAsync(userMessage, cancellationToken);
+
                 if (reasoningResponse.Length > 0)
                 {
-                    message = Message.ForReasoning(chatId, reasoningResponse.ToString());
-                    await context.Messages.AddAsync(message, cancellationToken);
+                    var reasoningMessage = Message.ForReasoning(chatId, reasoningResponse.ToString());
+                    await context.Messages.AddAsync(reasoningMessage, cancellationToken);
                 }
 
-                message = Message.ForAssistant(chatId, finalResponse.ToString());
-                await context.Messages.AddAsync(message, cancellationToken);
+                var assistantMessage = Message.ForAssistant(chatId, finalResponse.ToString());
+                await context.Messages.AddAsync(assistantMessage, cancellationToken);
                 await context.SaveChangesAsync(cancellationToken);
             })
             .Produces(StatusCodes.Status200OK, null, "text/event-stream")
