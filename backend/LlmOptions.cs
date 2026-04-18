@@ -6,13 +6,13 @@ public class LlmOptions : IValidateOptions<LlmOptions>
 {
     public const string Section = "LLM";
 
-    public string Endpoint { get; set; } = "";
+    public required string Endpoint { get; set; }
 
-    public string ApiKey { get; set; } = "";
+    public required string ApiKey { get; set; }
 
-    public string Model { get; set; } = "";
+    public required string Model { get; set; }
 
-    public string EmbeddingModel { get; set; } = "";
+    public required string EmbeddingModel { get; set; }
 
     public ValidateOptionsResult Validate(string? name, LlmOptions options)
     {

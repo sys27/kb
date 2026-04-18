@@ -1,4 +1,5 @@
 using Backend.Chats;
+using Backend.Ingestion;
 using Backend.Messages;
 using Backend.Projects;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,8 @@ public class KbDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(KbDbContext).Assembly);
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
