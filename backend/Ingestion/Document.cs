@@ -8,13 +8,13 @@ public class Document
 
     public required string Name { get; init; }
 
-    public required DateTime LastModifiedAt { get; init; }
+    public DateTime LastModifiedAt { get; set; }
 
-    public required byte[] Hash { get; init; }
+    public byte[] Hash { get; set; } = [];
 
     public int ProjectId { get; init; }
 
     public Project? Project { get; init; }
 
-    public ICollection<DocumentChunk> Chunks { get; init; } = new List<DocumentChunk>();
+    public ICollection<DocumentChunk> DocumentChunks { get; init; } = new List<DocumentChunk>();
 }

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(KbDbContext))]
-    [Migration("20260418123735_Initial")]
+    [Migration("20260419094257_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -170,7 +170,7 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Ingestion.DocumentChunk", b =>
                 {
                     b.HasOne("Backend.Ingestion.Document", "Document")
-                        .WithMany("Chunks")
+                        .WithMany("DocumentChunks")
                         .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -196,7 +196,7 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Ingestion.Document", b =>
                 {
-                    b.Navigation("Chunks");
+                    b.Navigation("DocumentChunks");
                 });
 
             modelBuilder.Entity("Backend.Projects.Project", b =>

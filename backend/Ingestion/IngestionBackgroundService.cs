@@ -15,7 +15,12 @@ public class IngestionBackgroundService : BackgroundService
     private readonly VectorStore vectorStore;
     private readonly ChunkerFactory chunkerFactory;
 
-    private readonly string[] supportedFileExtensions = [".md", ".txt"];
+    private readonly string[] supportedFileExtensions =
+    [
+        ".txt",
+        // TODO: ".md",
+    ];
+
     private const string ProjectPrefix = "project-";
 
     public IngestionBackgroundService(
@@ -40,11 +45,93 @@ public class IngestionBackgroundService : BackgroundService
             return;
         }
 
-        using var scope = scopeFactory.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<KbDbContext>();
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            using var scope = scopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<KbDbContext>();
 
-        // gather all files in the directory
-        var filesToProcess = new List<(string, string[])>();
+            var filesToProcess = GetFilesToProcess();
+            var documentChanges = await GetDocumentChanges(filesToProcess, dbContext, stoppingToken);
+
+            // process files
+            using var collection = vectorStore.GetCollection<int, DocumentChunk>("DocumentChunks");
+            await collection.EnsureCollectionExistsAsync(stoppingToken);
+
+            foreach (var (project, file) in documentChanges.DocumentsToAdd)
+            {
+                try
+                {
+                    var document = new Document
+                    {
+                        Name = Path.GetFileName(file),
+                        ProjectId = project.Id,
+                    };
+
+                    await ProcessFileAndChunks(document, file, stoppingToken);
+
+                    // TODO: transaction?
+                    await dbContext.AddAsync(document, stoppingToken);
+                    await dbContext.SaveChangesAsync(stoppingToken);
+                    await collection.UpsertAsync(document.DocumentChunks, stoppingToken);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Error adding document: '{FileName}'", file);
+                }
+            }
+
+            foreach (var (document, file) in documentChanges.DocumentsToUpdate)
+            {
+                try
+                {
+                    await collection.DeleteAsync(document.DocumentChunks.Select(x => x.Id), stoppingToken);
+
+                    foreach (var chunk in document.DocumentChunks)
+                        dbContext.Entry(chunk).State = EntityState.Detached;
+
+                    document.DocumentChunks.Clear();
+
+                    await ProcessFileAndChunks(document, file, stoppingToken);
+
+                    // TODO: transaction?
+                    dbContext.Update(document);
+                    await dbContext.SaveChangesAsync(stoppingToken);
+                    await collection.UpsertAsync(document.DocumentChunks, stoppingToken);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Error updating document: '{FileName}'", file);
+                }
+            }
+
+            foreach (var document in documentChanges.DocumentsToRemove)
+            {
+                try
+                {
+                    // TODO: transaction?
+                    await collection.DeleteAsync(document.DocumentChunks.Select(x => x.Id), stoppingToken);
+
+                    foreach (var chunk in document.DocumentChunks)
+                        dbContext.Entry(chunk).State = EntityState.Detached;
+
+                    document.DocumentChunks.Clear();
+
+                    dbContext.Documents.Remove(document);
+                    await dbContext.SaveChangesAsync(stoppingToken);
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Error removing document: '{DocumentName}'", document.Name);
+                }
+            }
+
+            await Task.Delay(options.Delay, stoppingToken);
+        }
+    }
+
+    private List<DirectoryFile> GetFilesToProcess()
+    {
+        var filesToProcess = new List<DirectoryFile>();
 
         var enumerationOptions = new EnumerationOptions
         {
@@ -69,20 +156,28 @@ public class IngestionBackgroundService : BackgroundService
                 continue;
             }
 
-            filesToProcess.Add((di.Name, files));
+            filesToProcess.Add(new DirectoryFile(di.Name, files));
         }
 
-        // collect all documents to add/update/remove
-        var documentsToAdd = new List<(Project, string)>();
-        var documentsToUpdate = new List<(Document, string)>();
+        return filesToProcess;
+    }
+
+    private async Task<DocumentChanges> GetDocumentChanges(
+        List<DirectoryFile> filesToProcess,
+        KbDbContext dbContext,
+        CancellationToken stoppingToken)
+    {
+        var documentsToAdd = new List<DocumentToAdd>();
+        var documentsToUpdate = new List<DocumentUpdate>();
         var documentsToRemove = new List<Document>();
+
         foreach (var (directoryName, files) in filesToProcess)
         {
             // TODO: better way to map projects to directories
             var projectName = directoryName[ProjectPrefix.Length..];
             var project = dbContext.Projects
                 .Include(x => x.Documents)
-                .ThenInclude(x => x.Chunks)
+                .ThenInclude(x => x.DocumentChunks)
                 .AsSplitQuery()
                 .FirstOrDefault(p => p.Name == projectName);
 
@@ -104,7 +199,7 @@ public class IngestionBackgroundService : BackgroundService
                 var document = project.Documents.FirstOrDefault(d => d.Name == fileInfo.Name);
                 if (document is null)
                 {
-                    documentsToAdd.Add((project, file));
+                    documentsToAdd.Add(new DocumentToAdd(project, file));
                 }
                 else
                 {
@@ -115,7 +210,7 @@ public class IngestionBackgroundService : BackgroundService
                     var hash = await SHA256.HashDataAsync(stream, stoppingToken);
 
                     if (document.Hash != hash)
-                        documentsToUpdate.Add((document, file));
+                        documentsToUpdate.Add(new DocumentUpdate(document, file));
                 }
             }
 
@@ -124,59 +219,46 @@ public class IngestionBackgroundService : BackgroundService
                     documentsToRemove.Add(document);
         }
 
-        // process files
-        using var collection = vectorStore.GetCollection<int, DocumentChunk>("DocumentChunks");
-        await collection.EnsureCollectionExistsAsync(stoppingToken);
+        return new DocumentChanges(documentsToAdd, documentsToUpdate, documentsToRemove);
+    }
 
-        foreach (var (project, file) in documentsToAdd)
+    private async Task ProcessFileAndChunks(Document document, string file, CancellationToken stoppingToken)
+    {
+        var fileInfo = new FileInfo(file);
+        await using var stream = File.OpenRead(file);
+        var hash = await SHA256.HashDataAsync(stream, stoppingToken);
+        document.LastModifiedAt = fileInfo.LastWriteTimeUtc;
+        document.Hash = hash;
+
+        stream.Position = 0;
+        using var streamReader = new StreamReader(stream, Encoding.UTF8);
+        var content = await streamReader.ReadToEndAsync(stoppingToken);
+
+        var chunker = chunkerFactory.Create(file);
+        var chunks = chunker.Split(content);
+        foreach (var chunk in chunks)
         {
-            var fileInfo = new FileInfo(file);
-            await using var stream = File.OpenRead(file);
-            var hash = await SHA256.HashDataAsync(stream, stoppingToken);
-            var document = new Document
+            var text = content.Substring(chunk.Start, chunk.Length);
+            var documentChunk = new DocumentChunk
             {
-                Name = fileInfo.Name,
-                LastModifiedAt = fileInfo.LastWriteTimeUtc,
-                Hash = hash,
-                ProjectId = project.Id,
+                DocumentId = document.Id,
+                Content = text,
+                Embedding = text,
+                Start = chunk.Start,
+                Length = chunk.Length,
             };
-
-            stream.Position = 0;
-            using var streamReader = new StreamReader(stream, Encoding.UTF8);
-            var content = await streamReader.ReadToEndAsync(stoppingToken);
-
-            var chunker = chunkerFactory.Create(file);
-            var chunks = chunker.Split(content);
-            foreach (var chunk in chunks)
-            {
-                var text = content.Substring(chunk.Start, chunk.Length);
-                var documentChunk = new DocumentChunk
-                {
-                    DocumentId = document.Id,
-                    Content = text,
-                    Embedding = text,
-                    Start = chunk.Start,
-                    Length = chunk.Length,
-                };
-                document.Chunks.Add(documentChunk);
-            }
-
-            // TODO: transaction?
-            await dbContext.AddAsync(document, stoppingToken);
-            await dbContext.SaveChangesAsync(stoppingToken);
-            await collection.UpsertAsync(document.Chunks, stoppingToken);
-        }
-
-        foreach (var (document, file) in documentsToUpdate)
-        {
-            // TODO:
-        }
-
-        foreach (var document in documentsToRemove)
-        {
-            await collection.DeleteAsync(document.Chunks.Select(x => x.Id), stoppingToken);
-            dbContext.Documents.Remove(document);
-            await dbContext.SaveChangesAsync(stoppingToken);
+            document.DocumentChunks.Add(documentChunk);
         }
     }
+
+    private readonly record struct DirectoryFile(string DirectoryName, string[] Files);
+
+    private readonly record struct DocumentChanges(
+        List<DocumentToAdd> DocumentsToAdd,
+        List<DocumentUpdate> DocumentsToUpdate,
+        List<Document> DocumentsToRemove);
+
+    private readonly record struct DocumentToAdd(Project Project, string File);
+
+    private readonly record struct DocumentUpdate(Document Document, string File);
 }

@@ -44,4 +44,6 @@ public class KbDbContext : DbContext
     public DbSet<Project> Projects { get; set; }
 
     public DbSet<Document> Documents { get; set; }
+
+    public DbSet<DocumentChunk> DocumentChunks { get; set; }
 }

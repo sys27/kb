@@ -17,7 +17,7 @@ public class DocumentChunkTypeConfiguration : IEntityTypeConfiguration<DocumentC
         builder.Ignore(e => e.Embedding);
 
         builder.HasOne(x => x.Document)
-            .WithMany(p => p.Chunks)
+            .WithMany(p => p.DocumentChunks)
             .HasForeignKey(d => d.DocumentId)
             .OnDelete(DeleteBehavior.Cascade);
     }
