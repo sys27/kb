@@ -1,9 +1,11 @@
 using System.Diagnostics;
 using System.Text;
+using Backend.Ingestion;
 using Backend.Messages.Requests;
 using Backend.Messages.Responses;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.VectorData;
 
 namespace Backend.Messages;
 
@@ -32,23 +34,73 @@ public static class MessageEndpoints
                 int chatId,
                 SendMessageRequest request,
                 KbDbContext context,
+                VectorStore vectorStore,
                 IChatClient chatClient,
                 HttpResponse httpResponse,
                 CancellationToken cancellationToken) =>
             {
-                var userMessage = Message.ForUser(chatId, request.Text);
-                var messages = await context.Messages
-                    .Where(m => m.ChatId == chatId)
+                var chat = await context.Chats
+                    .Include(x => x.Messages)
+                    .FirstOrDefaultAsync(c => c.Id == chatId, cancellationToken);
+                if (chat is null)
+                    return Results.NotFound();
+
+                if (chat.Messages.Count == 0)
+                {
+                    var systemMessage = Message.ForSystem(chatId, "You are a helpful assistant.");
+                    chat.Messages.Add(systemMessage);
+                }
+
+                // TODO: use LLM to generate query?
+                var collection = vectorStore.GetCollection<int, DocumentChunk>("DocumentChunks");
+                var vectorSearchOptions = new VectorSearchOptions<DocumentChunk>
+                {
+                    ScoreThreshold = 0.5, // TODO: configurable?
+                };
+                var similarDocuments = await collection
+                    .SearchAsync(request.Text, 3, vectorSearchOptions, cancellationToken)
                     .ToListAsync(cancellationToken);
-                var chatMessages = messages
-                    .Concat([userMessage])
+
+                if (similarDocuments.Count > 0)
+                {
+                    var contextPrompt = new StringBuilder(
+                        """
+                        Use the provided context to answer the user.
+                        If the context is insufficient, say you don't know.
+
+                        <context>
+
+                        """);
+
+                    for (var i = 0; i < similarDocuments.Count; i++)
+                    {
+                        contextPrompt
+                            .Append('[')
+                            .Append(i + 1)
+                            .Append("] ")
+                            .AppendLine(similarDocuments[i].Record.Content);
+                    }
+
+                    contextPrompt.Append("</context>");
+
+                    // TODO: use other role?
+                    var similarDocumentsMessage = Message.ForUser(chatId, contextPrompt.ToString());
+                    chat.Messages.Add(similarDocumentsMessage);
+                }
+
+                var userMessage = Message.ForUser(chatId, request.Text);
+                chat.Messages.Add(userMessage);
+
+                var chatMessages = chat.Messages
+                    .Where(x => x.Kind != MessageKind.Reasoning)
                     .Select(x => new ChatMessage(
                         x.Role switch
                         {
                             MessageRole.System => ChatRole.System,
                             MessageRole.User => ChatRole.User,
                             MessageRole.Assistant => ChatRole.Assistant,
-                            _ => throw new ArgumentOutOfRangeException()
+                            MessageRole.Tool => ChatRole.Tool,
+                            _ => throw new ArgumentOutOfRangeException(),
                         },
                         x.Text));
 
@@ -82,20 +134,22 @@ public static class MessageEndpoints
                     }
                 }
 
-                await context.Messages.AddAsync(userMessage, cancellationToken);
-
                 if (reasoningResponse.Length > 0)
                 {
                     var reasoningMessage = Message.ForReasoning(chatId, reasoningResponse.ToString());
-                    await context.Messages.AddAsync(reasoningMessage, cancellationToken);
+                    chat.Messages.Add(reasoningMessage);
                 }
 
                 var assistantMessage = Message.ForAssistant(chatId, finalResponse.ToString());
-                await context.Messages.AddAsync(assistantMessage, cancellationToken);
+                chat.Messages.Add(assistantMessage);
+
                 await context.SaveChangesAsync(cancellationToken);
+
+                return Results.Empty;
             })
             .Produces(StatusCodes.Status200OK, null, "text/event-stream")
             .ProducesProblem(400)
+            .ProducesProblem(404)
             .ProducesProblem(500)
             .WithName("SendMessage")
             .WithSummary("Send a message to a chat");

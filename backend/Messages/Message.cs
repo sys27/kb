@@ -18,6 +18,16 @@ public class Message
 
     public Chat? Chat { get; init; }
 
+    public static Message ForSystem(int chatId, string text)
+        => new Message
+        {
+            Role = MessageRole.System,
+            Kind = MessageKind.Text,
+            Text = text,
+            ChatId = chatId,
+            Timestamp = DateTimeOffset.UtcNow
+        };
+
     public static Message ForUser(int chatId, string text)
         => new Message
         {
@@ -43,6 +53,16 @@ public class Message
         {
             Role = MessageRole.Assistant,
             Kind = MessageKind.Reasoning,
+            Text = text,
+            ChatId = chatId,
+            Timestamp = DateTimeOffset.UtcNow
+        };
+
+    public static Message ForTool(int chatId, string text)
+        => new Message
+        {
+            Role = MessageRole.Tool,
+            Kind = MessageKind.Text,
             Text = text,
             ChatId = chatId,
             Timestamp = DateTimeOffset.UtcNow
