@@ -1,4 +1,5 @@
 using System.ClientModel;
+using Backend.Chats;
 using Backend.Ingestion;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -91,6 +92,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<TextChunker>();
         services.AddSingleton<MarkdownChunker>();
         services.AddSingleton<ChunkerFactory>();
+
+        services.AddSingleton<IValidateOptions<SummarizationOptions>, SummarizationOptions>();
+        services.Configure<SummarizationOptions>(configuration.GetSection(SummarizationOptions.Section));
+        services.AddHostedService<SummarizationBackgroundService>();
 
         return services;
     }

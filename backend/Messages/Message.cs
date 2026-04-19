@@ -12,7 +12,7 @@ public class Message
 
     public required string Text { get; init; }
 
-    public DateTimeOffset Timestamp { get; init; }
+    public DateTime Timestamp { get; init; }
 
     public int ChatId { get; init; }
 
@@ -25,7 +25,7 @@ public class Message
             Kind = MessageKind.Text,
             Text = text,
             ChatId = chatId,
-            Timestamp = DateTimeOffset.UtcNow
+            Timestamp = DateTime.UtcNow
         };
 
     public static Message ForUser(int chatId, string text)
@@ -35,7 +35,7 @@ public class Message
             Kind = MessageKind.Text,
             Text = text,
             ChatId = chatId,
-            Timestamp = DateTimeOffset.UtcNow
+            Timestamp = DateTime.UtcNow
         };
 
     public static Message ForAssistant(int chatId, string text)
@@ -45,7 +45,7 @@ public class Message
             Kind = MessageKind.Text,
             Text = text,
             ChatId = chatId,
-            Timestamp = DateTimeOffset.UtcNow
+            Timestamp = DateTime.UtcNow
         };
 
     public static Message ForReasoning(int chatId, string text)
@@ -55,7 +55,7 @@ public class Message
             Kind = MessageKind.Reasoning,
             Text = text,
             ChatId = chatId,
-            Timestamp = DateTimeOffset.UtcNow
+            Timestamp = DateTime.UtcNow
         };
 
     public static Message ForTool(int chatId, string text)
@@ -65,6 +65,6 @@ public class Message
             Kind = MessageKind.Text,
             Text = text,
             ChatId = chatId,
-            Timestamp = DateTimeOffset.UtcNow
+            Timestamp = DateTime.UtcNow
         };
 }

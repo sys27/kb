@@ -19,7 +19,7 @@ public static class MessageEndpoints
             {
                 var messages = await context.Messages
                     .Where(m => m.ChatId == chatId)
-                    .OrderByDescending(m => m.Timestamp)
+                    .OrderByDescending(m => m.Id)
                     .ToResponse()
                     .ToListAsync(cancellationToken);
 
@@ -48,7 +48,7 @@ public static class MessageEndpoints
                 if (chat.Messages.Count == 0)
                 {
                     var systemMessage = Message.ForSystem(chatId, "You are a helpful assistant.");
-                    chat.Messages.Add(systemMessage);
+                    chat.AddMessage(systemMessage);
                 }
 
                 // TODO: use LLM to generate query?
@@ -85,11 +85,12 @@ public static class MessageEndpoints
 
                     // TODO: use other role?
                     var similarDocumentsMessage = Message.ForUser(chatId, contextPrompt.ToString());
-                    chat.Messages.Add(similarDocumentsMessage);
+                    chat.AddMessage(similarDocumentsMessage);
                 }
 
+                // TODO: BM25
                 var userMessage = Message.ForUser(chatId, request.Text);
-                chat.Messages.Add(userMessage);
+                chat.AddMessage(userMessage);
 
                 var chatMessages = chat.Messages
                     .Where(x => x.Kind != MessageKind.Reasoning)
@@ -137,11 +138,11 @@ public static class MessageEndpoints
                 if (reasoningResponse.Length > 0)
                 {
                     var reasoningMessage = Message.ForReasoning(chatId, reasoningResponse.ToString());
-                    chat.Messages.Add(reasoningMessage);
+                    chat.AddMessage(reasoningMessage);
                 }
 
                 var assistantMessage = Message.ForAssistant(chatId, finalResponse.ToString());
-                chat.Messages.Add(assistantMessage);
+                chat.AddMessage(assistantMessage);
 
                 await context.SaveChangesAsync(cancellationToken);
 

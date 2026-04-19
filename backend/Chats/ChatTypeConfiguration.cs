@@ -16,6 +16,9 @@ public class ChatTypeConfiguration : IEntityTypeConfiguration<Chat>
             .IsRequired()
             .HasMaxLength(256);
 
+        builder.Property(e => e.Summary)
+            .HasMaxLength(2048);
+
         builder.HasIndex(e => e.ProjectId, "IX_Chats_ProjectId");
 
         builder.HasOne(d => d.Project)

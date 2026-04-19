@@ -23,8 +23,18 @@ namespace Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("LastMessageAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastSummaryUpdate")
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("ProjectId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(2048)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -115,8 +125,8 @@ namespace Backend.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<long>("Timestamp")
-                        .HasColumnType("INTEGER");
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id")
                         .HasName("PK_Messages");

@@ -16,6 +16,9 @@ public static partial class Mapper
 
     [MapperIgnoreTarget(nameof(Chat.Id))]
     [MapperIgnoreTarget(nameof(Chat.Messages))]
+    [MapperIgnoreTarget(nameof(Chat.LastMessageAt))]
+    [MapperIgnoreTarget(nameof(Chat.Summary))]
+    [MapperIgnoreTarget(nameof(Chat.LastSummaryUpdate))]
     [MapperIgnoreTarget(nameof(Chat.Project))]
     public static partial Chat ToEntity(this CreateChatRequest request);
 }

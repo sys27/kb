@@ -31,6 +31,9 @@ namespace Backend.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Title = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    LastMessageAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Summary = table.Column<string>(type: "TEXT", maxLength: 2048, nullable: true),
+                    LastSummaryUpdate = table.Column<DateTime>(type: "TEXT", nullable: true),
                     ProjectId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
@@ -75,7 +78,7 @@ namespace Backend.Migrations
                     Role = table.Column<int>(type: "INTEGER", nullable: false),
                     Kind = table.Column<int>(type: "INTEGER", nullable: false),
                     Text = table.Column<string>(type: "TEXT", nullable: false),
-                    Timestamp = table.Column<long>(type: "INTEGER", nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false),
                     ChatId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
