@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Backend.Chats;
+namespace Backend.Chats.TypeConfigurations;
 
 public class ChatTypeConfiguration : IEntityTypeConfiguration<Chat>
 {
@@ -24,6 +24,7 @@ public class ChatTypeConfiguration : IEntityTypeConfiguration<Chat>
         builder.HasOne(d => d.Project)
             .WithMany(p => p.Chats)
             .HasForeignKey(d => d.ProjectId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Cascade)
+            .HasConstraintName("FK_Chats_Projects_ProjectId");
     }
 }

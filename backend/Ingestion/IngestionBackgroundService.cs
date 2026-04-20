@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Backend.Projects;
+using Backend.Vectors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
@@ -12,7 +13,7 @@ public class IngestionBackgroundService : BackgroundService
     private readonly IngestionOptions options;
     private readonly ILogger<IngestionBackgroundService> logger;
     private readonly IServiceScopeFactory scopeFactory;
-    private readonly VectorStore vectorStore;
+    private readonly VectorStoreCollection<int, Embeddings> vectorCollection;
     private readonly ChunkerFactory chunkerFactory;
 
     private readonly string[] supportedFileExtensions =
@@ -27,13 +28,13 @@ public class IngestionBackgroundService : BackgroundService
         IOptions<IngestionOptions> options,
         ILogger<IngestionBackgroundService> logger,
         IServiceScopeFactory scopeFactory,
-        VectorStore vectorStore,
+        VectorStoreCollection<int, Embeddings> vectorCollection,
         ChunkerFactory chunkerFactory)
     {
         this.options = options.Value;
         this.logger = logger;
         this.scopeFactory = scopeFactory;
-        this.vectorStore = vectorStore;
+        this.vectorCollection = vectorCollection;
         this.chunkerFactory = chunkerFactory;
     }
 
@@ -54,9 +55,6 @@ public class IngestionBackgroundService : BackgroundService
             var documentChanges = await GetDocumentChanges(filesToProcess, dbContext, stoppingToken);
 
             // process files
-            using var collection = vectorStore.GetCollection<int, DocumentChunk>("DocumentChunks");
-            await collection.EnsureCollectionExistsAsync(stoppingToken);
-
             foreach (var (project, file) in documentChanges.DocumentsToAdd)
             {
                 try
@@ -72,7 +70,10 @@ public class IngestionBackgroundService : BackgroundService
                     // TODO: transaction?
                     await dbContext.AddAsync(document, stoppingToken);
                     await dbContext.SaveChangesAsync(stoppingToken);
-                    await collection.UpsertAsync(document.DocumentChunks, stoppingToken);
+
+                    await vectorCollection.UpsertAsync(
+                        document.DocumentChunks.Select(x => Embeddings.ForDocumentChunk(x.Id, x.Content)),
+                        stoppingToken);
                 }
                 catch (Exception e)
                 {
@@ -84,7 +85,7 @@ public class IngestionBackgroundService : BackgroundService
             {
                 try
                 {
-                    await collection.DeleteAsync(document.DocumentChunks.Select(x => x.Id), stoppingToken);
+                    await vectorCollection.DeleteAsync(document.DocumentChunks.Select(x => x.Id), stoppingToken);
 
                     foreach (var chunk in document.DocumentChunks)
                         dbContext.Entry(chunk).State = EntityState.Detached;
@@ -96,7 +97,10 @@ public class IngestionBackgroundService : BackgroundService
                     // TODO: transaction?
                     dbContext.Update(document);
                     await dbContext.SaveChangesAsync(stoppingToken);
-                    await collection.UpsertAsync(document.DocumentChunks, stoppingToken);
+
+                    await vectorCollection.UpsertAsync(
+                        document.DocumentChunks.Select(x => Embeddings.ForDocumentChunk(x.Id, x.Content)),
+                        stoppingToken);
                 }
                 catch (Exception e)
                 {
@@ -109,7 +113,22 @@ public class IngestionBackgroundService : BackgroundService
                 try
                 {
                     // TODO: transaction?
-                    await collection.DeleteAsync(document.DocumentChunks.Select(x => x.Id), stoppingToken);
+                    while (true)
+                    {
+                        var embeddingIds = await vectorCollection
+                            .GetAsync(
+                                x => x.SourceType == (int)EmbeddingSourceType.DocumentChunk && x.Id == document.Id,
+                                10,
+                                null,
+                                stoppingToken)
+                            .Select(x => x.Id)
+                            .ToListAsync(stoppingToken);
+
+                        if (embeddingIds.Count == 0)
+                            break;
+
+                        await vectorCollection.DeleteAsync(embeddingIds, stoppingToken);
+                    }
 
                     foreach (var chunk in document.DocumentChunks)
                         dbContext.Entry(chunk).State = EntityState.Detached;
@@ -243,7 +262,6 @@ public class IngestionBackgroundService : BackgroundService
             {
                 DocumentId = document.Id,
                 Content = text,
-                Embedding = text,
                 Start = chunk.Start,
                 Length = chunk.Length,
             };

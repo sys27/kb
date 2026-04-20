@@ -3,6 +3,7 @@ using System.Text;
 using Backend.Ingestion;
 using Backend.Messages.Requests;
 using Backend.Messages.Responses;
+using Backend.Vectors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.VectorData;
@@ -34,7 +35,7 @@ public static class MessageEndpoints
                 int chatId,
                 SendMessageRequest request,
                 KbDbContext context,
-                VectorStore vectorStore,
+                VectorStoreCollection<int, Embeddings> vectorCollection,
                 IChatClient chatClient,
                 HttpResponse httpResponse,
                 CancellationToken cancellationToken) =>
@@ -52,12 +53,11 @@ public static class MessageEndpoints
                 }
 
                 // TODO: use LLM to generate query?
-                var collection = vectorStore.GetCollection<int, DocumentChunk>("DocumentChunks");
-                var vectorSearchOptions = new VectorSearchOptions<DocumentChunk>
+                var vectorSearchOptions = new VectorSearchOptions<Embeddings>
                 {
                     ScoreThreshold = 0.5, // TODO: configurable?
                 };
-                var similarDocuments = await collection
+                var similarDocuments = await vectorCollection
                     .SearchAsync(request.Text, 3, vectorSearchOptions, cancellationToken)
                     .ToListAsync(cancellationToken);
 
@@ -74,11 +74,13 @@ public static class MessageEndpoints
 
                     for (var i = 0; i < similarDocuments.Count; i++)
                     {
+                        var content = context.GetEmbeddingsContent(similarDocuments[i].Record);
+
                         contextPrompt
                             .Append('[')
                             .Append(i + 1)
                             .Append("] ")
-                            .AppendLine(similarDocuments[i].Record.Content);
+                            .AppendLine(content);
                     }
 
                     contextPrompt.Append("</context>");

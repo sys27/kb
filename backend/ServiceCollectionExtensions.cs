@@ -1,6 +1,7 @@
 using System.ClientModel;
 using Backend.Chats;
 using Backend.Ingestion;
+using Backend.Vectors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.AI;
@@ -35,6 +36,14 @@ public static class ServiceCollectionExtensions
         services.AddSqliteVectorStore(
             provider => provider.GetRequiredService<IOptions<IngestionOptions>>().Value.ConnectionString,
             provider => new SqliteVectorStoreOptions
+            {
+                EmbeddingGenerator = provider.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>()
+            });
+
+        services.AddSqliteCollection<int, Embeddings>(
+            "Embeddings",
+            provider => provider.GetRequiredService<IOptions<IngestionOptions>>().Value.ConnectionString,
+            provider => new SqliteCollectionOptions
             {
                 EmbeddingGenerator = provider.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>()
             });

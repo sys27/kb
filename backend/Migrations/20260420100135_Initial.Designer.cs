@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(KbDbContext))]
-    [Migration("20260419181641_Initial")]
+    [Migration("20260420100135_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -25,6 +25,9 @@ namespace Backend.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
+
+                    b.Property<float?>("Importance")
+                        .HasColumnType("REAL");
 
                     b.Property<DateTime?>("LastMessageAt")
                         .HasColumnType("TEXT");
@@ -50,6 +53,80 @@ namespace Backend.Migrations
                     b.HasIndex(new[] { "ProjectId" }, "IX_Chats_ProjectId");
 
                     b.ToTable("Chats", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Chats.ChatDecision", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChatId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id")
+                        .HasName("PK_ChatDecisions");
+
+                    b.HasIndex("ChatId")
+                        .HasDatabaseName("IX_ChatDecisions_ChatId");
+
+                    b.ToTable("ChatDecisions", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Chats.ChatFact", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChatId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Fact")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id")
+                        .HasName("PK_ChatFacts");
+
+                    b.HasIndex("ChatId")
+                        .HasDatabaseName("IX_ChatFacts_ChatId");
+
+                    b.ToTable("ChatFacts", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Chats.ChatTopic", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChatId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id")
+                        .HasName("PK_ChatTopics");
+
+                    b.HasIndex("ChatId")
+                        .HasDatabaseName("IX_ChatTopics_ChatId");
+
+                    b.ToTable("ChatTopics", (string)null);
                 });
 
             modelBuilder.Entity("Backend.Ingestion.Document", b =>
@@ -161,9 +238,46 @@ namespace Backend.Migrations
                     b.HasOne("Backend.Projects.Project", "Project")
                         .WithMany("Chats")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("FK_Chats_Projects_ProjectId");
 
                     b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("Backend.Chats.ChatDecision", b =>
+                {
+                    b.HasOne("Backend.Chats.Chat", "Chat")
+                        .WithMany("Decisions")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_ChatDecisions_Chats_ChatId");
+
+                    b.Navigation("Chat");
+                });
+
+            modelBuilder.Entity("Backend.Chats.ChatFact", b =>
+                {
+                    b.HasOne("Backend.Chats.Chat", "Chat")
+                        .WithMany("Facts")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_ChatFacts_Chats_ChatId");
+
+                    b.Navigation("Chat");
+                });
+
+            modelBuilder.Entity("Backend.Chats.ChatTopic", b =>
+                {
+                    b.HasOne("Backend.Chats.Chat", "Chat")
+                        .WithMany("Topics")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_ChatTopics_Chats_ChatId");
+
+                    b.Navigation("Chat");
                 });
 
             modelBuilder.Entity("Backend.Ingestion.Document", b =>
@@ -172,7 +286,8 @@ namespace Backend.Migrations
                         .WithMany("Documents")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_Documents_Projects_ProjectId");
 
                     b.Navigation("Project");
                 });
@@ -183,7 +298,8 @@ namespace Backend.Migrations
                         .WithMany("DocumentChunks")
                         .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_DocumentChunks_Documents_DocumentId");
 
                     b.Navigation("Document");
                 });
@@ -201,7 +317,13 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Chats.Chat", b =>
                 {
+                    b.Navigation("Decisions");
+
+                    b.Navigation("Facts");
+
                     b.Navigation("Messages");
+
+                    b.Navigation("Topics");
                 });
 
             modelBuilder.Entity("Backend.Ingestion.Document", b =>

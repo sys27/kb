@@ -34,7 +34,8 @@ namespace Backend.Migrations
                     LastMessageAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Summary = table.Column<string>(type: "TEXT", maxLength: 2048, nullable: true),
                     LastSummaryUpdate = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    ProjectId = table.Column<int>(type: "INTEGER", nullable: true)
+                    ProjectId = table.Column<int>(type: "INTEGER", nullable: true),
+                    Importance = table.Column<float>(type: "REAL", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -65,6 +66,67 @@ namespace Backend.Migrations
                         name: "FK_Documents_Projects_ProjectId",
                         column: x => x.ProjectId,
                         principalTable: "Projects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChatDecisions",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Decision = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Reason = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    ChatId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChatDecisions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChatDecisions_Chats_ChatId",
+                        column: x => x.ChatId,
+                        principalTable: "Chats",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChatFacts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Fact = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    ChatId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChatFacts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChatFacts_Chats_ChatId",
+                        column: x => x.ChatId,
+                        principalTable: "Chats",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ChatTopics",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Topic = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    ChatId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChatTopics", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChatTopics_Chats_ChatId",
+                        column: x => x.ChatId,
+                        principalTable: "Chats",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -115,9 +177,24 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ChatDecisions_ChatId",
+                table: "ChatDecisions",
+                column: "ChatId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatFacts_ChatId",
+                table: "ChatFacts",
+                column: "ChatId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Chats_ProjectId",
                 table: "Chats",
                 column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatTopics_ChatId",
+                table: "ChatTopics",
+                column: "ChatId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DocumentChunks_DocumentId",
@@ -138,6 +215,15 @@ namespace Backend.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "ChatDecisions");
+
+            migrationBuilder.DropTable(
+                name: "ChatFacts");
+
+            migrationBuilder.DropTable(
+                name: "ChatTopics");
+
             migrationBuilder.DropTable(
                 name: "DocumentChunks");
 

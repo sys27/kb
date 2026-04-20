@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Backend.Projects;
+namespace Backend.Projects.TypeConfigurations;
 
 public class ProjectTypeConfiguration : IEntityTypeConfiguration<Project>
 {

@@ -2,6 +2,7 @@ using Backend.Chats;
 using Backend.Ingestion;
 using Backend.Messages;
 using Backend.Projects;
+using Backend.Vectors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -35,6 +36,14 @@ public class KbDbContext : DbContext
                     .HasConversion(new DateTimeOffsetToBinaryConverter());
             }
         }
+    }
+
+    public string? GetEmbeddingsContent(Embeddings embeddings)
+    {
+        if (embeddings.SourceType == (int)EmbeddingSourceType.DocumentChunk)
+            return DocumentChunks.FirstOrDefault(x => x.Id == embeddings.SourceId)?.Content;
+
+        throw new ArgumentOutOfRangeException(nameof(embeddings.SourceType), "Unknown source type");
     }
 
     public DbSet<Chat> Chats { get; set; }

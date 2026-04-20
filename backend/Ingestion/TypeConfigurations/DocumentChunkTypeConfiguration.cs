@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Backend.Ingestion;
+namespace Backend.Ingestion.TypeConfigurations;
 
 public class DocumentChunkTypeConfiguration : IEntityTypeConfiguration<DocumentChunk>
 {
@@ -14,11 +14,10 @@ public class DocumentChunkTypeConfiguration : IEntityTypeConfiguration<DocumentC
 
         builder.HasIndex(e => e.DocumentId, "IX_DocumentChunks_DocumentId");
 
-        builder.Ignore(e => e.Embedding);
-
         builder.HasOne(x => x.Document)
             .WithMany(p => p.DocumentChunks)
             .HasForeignKey(d => d.DocumentId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Cascade)
+            .HasConstraintName("FK_DocumentChunks_Documents_DocumentId");
     }
 }

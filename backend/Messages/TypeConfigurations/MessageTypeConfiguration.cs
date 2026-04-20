@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Backend.Messages;
+namespace Backend.Messages.TypeConfigurations;
 
 public class MessageTypeConfiguration : IEntityTypeConfiguration<Message>
 {

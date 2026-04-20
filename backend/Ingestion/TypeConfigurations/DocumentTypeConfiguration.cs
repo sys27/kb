@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Backend.Ingestion;
+namespace Backend.Ingestion.TypeConfigurations;
 
 public class DocumentTypeConfiguration : IEntityTypeConfiguration<Document>
 {
@@ -12,8 +12,6 @@ public class DocumentTypeConfiguration : IEntityTypeConfiguration<Document>
         builder.HasKey(e => e.Id)
             .HasName("PK_Documents");
 
-        builder.HasIndex(e => e.ProjectId, "IX_Documents_ProjectId");
-
         builder.Property(e => e.Name)
             .IsRequired()
             .HasMaxLength(256);
@@ -22,9 +20,12 @@ public class DocumentTypeConfiguration : IEntityTypeConfiguration<Document>
             .IsRequired()
             .HasMaxLength(32);
 
+        builder.HasIndex(e => e.ProjectId, "IX_Documents_ProjectId");
+
         builder.HasOne(d => d.Project)
             .WithMany(p => p.Documents)
             .HasForeignKey(d => d.ProjectId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Cascade)
+            .HasConstraintName("FK_Documents_Projects_ProjectId");
     }
 }
