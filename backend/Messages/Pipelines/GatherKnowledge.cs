@@ -80,8 +80,7 @@ public class GatherKnowledge : IConversationPipelineStep
     {
         var vectorOptions = new VectorSearchOptions<Embeddings>
         {
-            // TODO: include threshold?
-            // ScoreThreshold = 0.5,
+            ScoreThreshold = 0.5,
             Filter = e => e.ProjectId == chat.ProjectId &&
                           e.SourceType == (int)EmbeddingSourceType.ChatUserPreference,
         };

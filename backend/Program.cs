@@ -25,7 +25,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddDatabase(builder.Configuration, builder.Environment);
 builder.Services.AddAiClient();
 builder.Services.AddIngestion(builder.Configuration);
-builder.Services.AddConversationPipeline();
+builder.Services.AddConversationPipeline(builder.Configuration);
 
 builder.Services.AddSpaStaticFiles(options => options.RootPath = "wwwroot");
 

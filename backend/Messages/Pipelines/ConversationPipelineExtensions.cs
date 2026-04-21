@@ -1,8 +1,14 @@
+using Backend.Messages.Tools.WebFetch;
+using Backend.Messages.Tools.WebSearch;
+using Microsoft.Extensions.Options;
+
 namespace Backend.Messages.Pipelines;
 
 public static class ConversationPipelineExtensions
 {
-    public static IServiceCollection AddConversationPipeline(this IServiceCollection services)
+    public static IServiceCollection AddConversationPipeline(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         services.AddHttpContextAccessor();
 
@@ -21,6 +27,26 @@ public static class ConversationPipelineExtensions
             provider.GetRequiredService<ProcessResponse>(),
             provider.GetRequiredService<AddResponsesToMessages>(),
         ]));
+
+        services.AddSingleton<IValidateOptions<WebSearchOptions>, WebSearchOptions>();
+        services.Configure<WebSearchOptions>(configuration.GetSection(WebSearchOptions.Section));
+        services
+            .AddHttpClient<WebSearchService>((provider, client) =>
+            {
+                var options = provider.GetRequiredService<IOptions<WebSearchOptions>>();
+
+                client.BaseAddress = new Uri(options.Value.BaseUrl!);
+            })
+            .AddStandardResilienceHandler();
+
+        services
+            .AddHttpClient<IWebFetchHandler, WikipediaHandler>((_, client) =>
+                client.DefaultRequestHeaders.UserAgent.ParseAdd("KnowledgeBase (sys2712@gmail.com)"))
+            .AddStandardResilienceHandler();
+        services
+            .AddHttpClient<IWebFetchHandler, DefaultHandler>()
+            .AddStandardResilienceHandler();
+        services.AddTransient<WebFetchService>();
 
         return services;
     }
