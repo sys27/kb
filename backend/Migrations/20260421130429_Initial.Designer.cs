@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(KbDbContext))]
-    [Migration("20260420100135_Initial")]
+    [Migration("20260421130429_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -25,9 +25,6 @@ namespace Backend.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
-
-                    b.Property<float?>("Importance")
-                        .HasColumnType("REAL");
 
                     b.Property<DateTime?>("LastMessageAt")
                         .HasColumnType("TEXT");
@@ -53,6 +50,19 @@ namespace Backend.Migrations
                     b.HasIndex(new[] { "ProjectId" }, "IX_Chats_ProjectId");
 
                     b.ToTable("Chats", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ProjectId = 1,
+                            Title = "Chat 1"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Title = "Chat 2"
+                        });
                 });
 
             modelBuilder.Entity("Backend.Chats.ChatDecision", b =>
@@ -127,6 +137,29 @@ namespace Backend.Migrations
                         .HasDatabaseName("IX_ChatTopics_ChatId");
 
                     b.ToTable("ChatTopics", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Chats.ChatUserPreference", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ChatId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Preference")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id")
+                        .HasName("PK_ChatUserPreferences");
+
+                    b.HasIndex("ChatId")
+                        .HasDatabaseName("IX_ChatUserPreferences_ChatId");
+
+                    b.ToTable("ChatUserPreferences", (string)null);
                 });
 
             modelBuilder.Entity("Backend.Ingestion.Document", b =>
@@ -231,6 +264,13 @@ namespace Backend.Migrations
                         .HasName("PK_Projects");
 
                     b.ToTable("Projects", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "test"
+                        });
                 });
 
             modelBuilder.Entity("Backend.Chats.Chat", b =>
@@ -280,6 +320,18 @@ namespace Backend.Migrations
                     b.Navigation("Chat");
                 });
 
+            modelBuilder.Entity("Backend.Chats.ChatUserPreference", b =>
+                {
+                    b.HasOne("Backend.Chats.Chat", "Chat")
+                        .WithMany("UserPreferences")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_ChatUserPreferences_Chats_ChatId");
+
+                    b.Navigation("Chat");
+                });
+
             modelBuilder.Entity("Backend.Ingestion.Document", b =>
                 {
                     b.HasOne("Backend.Projects.Project", "Project")
@@ -324,6 +376,8 @@ namespace Backend.Migrations
                     b.Navigation("Messages");
 
                     b.Navigation("Topics");
+
+                    b.Navigation("UserPreferences");
                 });
 
             modelBuilder.Entity("Backend.Ingestion.Document", b =>

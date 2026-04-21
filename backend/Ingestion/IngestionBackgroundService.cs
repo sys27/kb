@@ -40,6 +40,9 @@ public class IngestionBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!options.Enabled)
+            return;
+
         if (!Directory.Exists(options.Path))
         {
             logger.LogError("Directory '{Path}' does not exist", options.Path);
@@ -72,7 +75,7 @@ public class IngestionBackgroundService : BackgroundService
                     await dbContext.SaveChangesAsync(stoppingToken);
 
                     await vectorCollection.UpsertAsync(
-                        document.DocumentChunks.Select(x => Embeddings.ForDocumentChunk(x.Id, x.Content)),
+                        document.DocumentChunks.Select(x => Embeddings.ForDocumentChunk(project.Id, x.Id, x.Content)),
                         stoppingToken);
                 }
                 catch (Exception e)
@@ -99,7 +102,8 @@ public class IngestionBackgroundService : BackgroundService
                     await dbContext.SaveChangesAsync(stoppingToken);
 
                     await vectorCollection.UpsertAsync(
-                        document.DocumentChunks.Select(x => Embeddings.ForDocumentChunk(x.Id, x.Content)),
+                        document.DocumentChunks.Select(x =>
+                            Embeddings.ForDocumentChunk(document.ProjectId, x.Id, x.Content)),
                         stoppingToken);
                 }
                 catch (Exception e)

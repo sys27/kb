@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Backend.Messages;
 using Backend.Vectors;
@@ -29,9 +30,9 @@ public class SummarizationBackgroundService : BackgroundService
         Fields:
         - summary: short paragraph (2-5 sentences)
         - topics: 3-8 concise tags
-        - keyPoints: list of important facts or insights
+        - facts: list of important facts or insights
         - decisions: only if a clear decision was made
-        - importance: 0.0-1.0 based on long-term usefulness
+        - userPreferences: stable user facts, represent long-term preferences, constraints, or goals
 
         Output in JSON format with the following structure:
         {{
@@ -42,7 +43,7 @@ public class SummarizationBackgroundService : BackgroundService
             "decision": "string",
             "reason": "string"
           }}],
-          "importance": "number"
+          "userPreferences": ["string"]
         }}
 
         Conversation:
@@ -65,19 +66,24 @@ public class SummarizationBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!options.Enabled)
+            return;
+
         while (!stoppingToken.IsCancellationRequested)
         {
             var scope = scopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<KbDbContext>();
+            var summaryInactivityWindow = DateTime.UtcNow.Add(-options.SummaryInactivityWindow);
             var chats = await dbContext.Chats
                 .Include(x => x.Messages)
                 .Include(x => x.Topics)
                 .Include(x => x.Facts)
                 .Include(x => x.Decisions)
+                .Include(x => x.UserPreferences)
                 .Where(x => x.Messages.Count > 0 &&
                             ((x.LastSummaryUpdate == null &&
-                              x.LastMessageAt < DateTime.UtcNow.AddMinutes(-10)) ||
-                             (x.LastSummaryUpdate < DateTime.UtcNow.AddMinutes(-10) &&
+                              x.LastMessageAt < summaryInactivityWindow) ||
+                             (x.LastSummaryUpdate < summaryInactivityWindow &&
                               x.LastSummaryUpdate < x.LastMessageAt)))
                 .AsSplitQuery()
                 .ToListAsync(stoppingToken);
@@ -116,7 +122,7 @@ public class SummarizationBackgroundService : BackgroundService
                 chat.UpdateTopics(summaryResponse.Topics);
                 chat.UpdateFacts(summaryResponse.Facts);
                 chat.UpdateDecisions(summaryResponse.Decisions.Select(x => (x.Decision, x.Reason)));
-                chat.Importance = summaryResponse.Importance;
+                chat.UpdateUserPreferences(summaryResponse.UserPreferences);
 
                 await dbContext.SaveChangesAsync(stoppingToken);
 
@@ -124,7 +130,11 @@ public class SummarizationBackgroundService : BackgroundService
                 {
                     var embeddings = await vectorCollection
                         .GetAsync(
-                            x => x.SourceType == (int)EmbeddingSourceType.Chat && x.SourceId == chat.Id,
+                            x => (x.SourceType == (int)EmbeddingSourceType.ChatSummary ||
+                                  x.SourceType == (int)EmbeddingSourceType.ChatFact ||
+                                  x.SourceType == (int)EmbeddingSourceType.ChatDecision ||
+                                  x.SourceType == (int)EmbeddingSourceType.ChatUserPreference) &&
+                                 x.SourceId == chat.Id,
                             10,
                             null,
                             stoppingToken)
@@ -137,25 +147,40 @@ public class SummarizationBackgroundService : BackgroundService
                     await vectorCollection.DeleteAsync(embeddings, stoppingToken);
                 }
 
-                var summaryEmbeddings = Embeddings.ForChat(chat.Id, summaryResponse.Summary);
-                await vectorCollection.UpsertAsync(summaryEmbeddings, stoppingToken);
-
-                foreach (var topic in summaryResponse.Topics)
+                var summaryAndTopics = new StringBuilder(chat.Summary);
+                if (chat.Topics.Count > 0)
                 {
-                    var topicEmbeddings = Embeddings.ForChat(chat.Id, topic);
-                    await vectorCollection.UpsertAsync(topicEmbeddings, stoppingToken);
+                    summaryAndTopics.AppendLine("\nTopics:");
+
+                    foreach (var topic in chat.Topics)
+                        summaryAndTopics.Append("- ").AppendLine(topic.Topic);
                 }
 
-                foreach (var fact in summaryResponse.Facts)
+                var summaryEmbeddings = Embeddings.ForChatSummary(chat.ProjectId, chat.Id, summaryAndTopics.ToString());
+                await vectorCollection.UpsertAsync(summaryEmbeddings, stoppingToken);
+
+                foreach (var fact in chat.Facts)
                 {
-                    var factEmbeddings = Embeddings.ForChat(chat.Id, fact);
+                    var factEmbeddings = Embeddings.ForChatFact(chat.ProjectId, fact.Id, fact.Fact);
                     await vectorCollection.UpsertAsync(factEmbeddings, stoppingToken);
                 }
 
-                foreach (var (decision, reason) in summaryResponse.Decisions)
+                foreach (var decision in chat.Decisions)
                 {
-                    var decisionEmbeddings = Embeddings.ForChat(chat.Id, $"Decision: {decision}. Reason: {reason}.");
+                    var decisionEmbeddings = Embeddings.ForChatDecision(
+                        chat.ProjectId,
+                        decision.Id,
+                        $"Decision: {decision.Decision}. Reason: {decision.Reason}.");
                     await vectorCollection.UpsertAsync(decisionEmbeddings, stoppingToken);
+                }
+
+                foreach (var preference in chat.UserPreferences)
+                {
+                    var preferenceEmbeddings = Embeddings.ForChatUserPreference(
+                        chat.ProjectId,
+                        preference.Id,
+                        preference.Preference);
+                    await vectorCollection.UpsertAsync(preferenceEmbeddings, stoppingToken);
                 }
             }
 
@@ -173,10 +198,10 @@ public class SummarizationBackgroundService : BackgroundService
             return JsonSerializer.Deserialize<SummaryResponse>(span, JsonSerializerOptions.Web);
 
         if (span.StartsWith("```json"))
-            return JsonSerializer.Deserialize<SummaryResponse>(span[7..^10], JsonSerializerOptions.Web);
+            return JsonSerializer.Deserialize<SummaryResponse>(span[7..^3], JsonSerializerOptions.Web);
 
         if (span.StartsWith("```"))
-            return JsonSerializer.Deserialize<SummaryResponse>(span[3..^6], JsonSerializerOptions.Web);
+            return JsonSerializer.Deserialize<SummaryResponse>(span[3..^3], JsonSerializerOptions.Web);
 
         return null;
     }
@@ -197,6 +222,6 @@ public class SummarizationBackgroundService : BackgroundService
 
         public List<DecisionResponse> Decisions { get; set; } = [];
 
-        public float? Importance { get; set; }
+        public List<string> UserPreferences { get; set; } = [];
     }
 }

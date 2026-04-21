@@ -15,5 +15,8 @@ public class ProjectTypeConfiguration : IEntityTypeConfiguration<Project>
         builder.Property(e => e.Name)
             .IsRequired()
             .HasMaxLength(256);
+
+        // TODO: remove
+        builder.HasData(new Project { Id = 1, Name = "test" });
     }
 }

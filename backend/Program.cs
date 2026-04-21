@@ -1,6 +1,7 @@
 using Backend;
 using Backend.Chats;
 using Backend.Messages;
+using Backend.Messages.Pipelines;
 using Backend.Projects;
 using Backend.Vectors;
 using Microsoft.Extensions.Options;
@@ -24,6 +25,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddDatabase(builder.Configuration, builder.Environment);
 builder.Services.AddAiClient();
 builder.Services.AddIngestion(builder.Configuration);
+builder.Services.AddConversationPipeline();
 
 builder.Services.AddSpaStaticFiles(options => options.RootPath = "wwwroot");
 

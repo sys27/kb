@@ -38,15 +38,56 @@ public class KbDbContext : DbContext
         }
     }
 
-    public string? GetEmbeddingsContent(Embeddings embeddings)
+    public async Task<string?> GetEmbeddingsContent(Embeddings embeddings, CancellationToken cancellationToken = default)
     {
         if (embeddings.SourceType == (int)EmbeddingSourceType.DocumentChunk)
-            return DocumentChunks.FirstOrDefault(x => x.Id == embeddings.SourceId)?.Content;
+        {
+            var chunk = await DocumentChunks.FirstOrDefaultAsync(x => x.Id == embeddings.SourceId, cancellationToken);
+
+            return chunk?.Content;
+        }
+
+        if (embeddings.SourceType == (int)EmbeddingSourceType.ChatSummary)
+        {
+            var chat = await Chats.FirstOrDefaultAsync(x => x.Id == embeddings.SourceId, cancellationToken);
+
+            return chat?.Summary;
+        }
+
+        if (embeddings.SourceType == (int)EmbeddingSourceType.ChatFact)
+        {
+            var fact = await ChatFacts.FirstOrDefaultAsync(x => x.Id == embeddings.SourceId, cancellationToken);
+
+            return fact?.Fact;
+        }
+
+        if (embeddings.SourceType == (int)EmbeddingSourceType.ChatDecision)
+        {
+            var decision = await ChatDecisions.FirstOrDefaultAsync(x => x.Id == embeddings.SourceId, cancellationToken);
+            if (decision is null)
+                return null;
+
+            return $"Decision: {decision.Decision}. Reason: {decision.Reason}.";
+        }
+
+        if (embeddings.SourceType == (int)EmbeddingSourceType.ChatUserPreference)
+        {
+            var preference = await ChatUserPreferences
+                .FirstOrDefaultAsync(x => x.Id == embeddings.SourceId, cancellationToken);
+
+            return preference?.Preference;
+        }
 
         throw new ArgumentOutOfRangeException(nameof(embeddings.SourceType), "Unknown source type");
     }
 
     public DbSet<Chat> Chats { get; set; }
+
+    public DbSet<ChatFact> ChatFacts { get; set; }
+
+    public DbSet<ChatDecision> ChatDecisions { get; set; }
+
+    public DbSet<ChatUserPreference> ChatUserPreferences { get; set; }
 
     public DbSet<Message> Messages { get; set; }
 

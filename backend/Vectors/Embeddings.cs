@@ -17,19 +17,51 @@ public class Embeddings
     [VectorStoreData(IsIndexed = true)]
     public required int SourceType { get; init; }
 
-    public static Embeddings ForDocumentChunk(int documentChunkId, string content)
+    [VectorStoreData(IsIndexed = true)]
+    public int? ProjectId { get; init; }
+
+    public static Embeddings ForDocumentChunk(int? projectId, int documentChunkId, string content)
         => new Embeddings
         {
             Embedding = content,
             SourceId = documentChunkId,
+            ProjectId = projectId,
             SourceType = (int)EmbeddingSourceType.DocumentChunk,
         };
 
-    public static Embeddings ForChat(int chatId, string content)
+    public static Embeddings ForChatSummary(int? projectId, int chatId, string content)
         => new Embeddings
         {
             Embedding = content,
             SourceId = chatId,
-            SourceType = (int)EmbeddingSourceType.Chat,
+            ProjectId = projectId,
+            SourceType = (int)EmbeddingSourceType.ChatSummary,
+        };
+
+    public static Embeddings ForChatFact(int? projectId, int factId, string content)
+        => new Embeddings
+        {
+            Embedding = content,
+            SourceId = factId,
+            ProjectId = projectId,
+            SourceType = (int)EmbeddingSourceType.ChatFact,
+        };
+
+    public static Embeddings ForChatDecision(int? projectId, int decisionId, string content)
+        => new Embeddings
+        {
+            Embedding = content,
+            SourceId = decisionId,
+            ProjectId = projectId,
+            SourceType = (int)EmbeddingSourceType.ChatDecision,
+        };
+
+    public static Embeddings ForChatUserPreference(int? projectId, int preferenceId, string content)
+        => new Embeddings
+        {
+            Embedding = content,
+            SourceId = preferenceId,
+            ProjectId = projectId,
+            SourceType = (int)EmbeddingSourceType.ChatUserPreference,
         };
 }

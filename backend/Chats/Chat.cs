@@ -27,7 +27,7 @@ public class Chat
 
     public ICollection<ChatDecision> Decisions { get; init; } = [];
 
-    public float? Importance { get; set; }
+    public ICollection<ChatUserPreference> UserPreferences { get; init; } = [];
 
     public void AddMessage(Message message)
     {
@@ -63,5 +63,13 @@ public class Chat
 
         foreach (var (decision, reason) in decisions)
             Decisions.Add(new ChatDecision { Decision = decision, Reason = reason, ChatId = Id, Chat = this });
+    }
+
+    public void UpdateUserPreferences(IEnumerable<string> preferences)
+    {
+        UserPreferences.Clear();
+
+        foreach (var preference in preferences)
+            UserPreferences.Add(new ChatUserPreference { Preference = preference, ChatId = Id, Chat = this });
     }
 }

@@ -26,5 +26,9 @@ public class ChatTypeConfiguration : IEntityTypeConfiguration<Chat>
             .HasForeignKey(d => d.ProjectId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("FK_Chats_Projects_ProjectId");
+
+        // TODO: remove
+        builder.HasData(new Chat { Id = 1, Title = "Chat 1", ProjectId = 1 });
+        builder.HasData(new Chat { Id = 2, Title = "Chat 2", ProjectId = null });
     }
 }

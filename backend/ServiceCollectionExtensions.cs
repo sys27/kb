@@ -34,7 +34,7 @@ public static class ServiceCollectionExtensions
         });
 
         services.AddSqliteVectorStore(
-            provider => provider.GetRequiredService<IOptions<IngestionOptions>>().Value.ConnectionString,
+            provider => provider.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")!,
             provider => new SqliteVectorStoreOptions
             {
                 EmbeddingGenerator = provider.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>()
@@ -42,7 +42,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSqliteCollection<int, Embeddings>(
             "Embeddings",
-            provider => provider.GetRequiredService<IOptions<IngestionOptions>>().Value.ConnectionString,
+            provider => provider.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")!,
             provider => new SqliteCollectionOptions
             {
                 EmbeddingGenerator = provider.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>()
@@ -65,13 +65,16 @@ public static class ServiceCollectionExtensions
                 });
         });
 
-        services.AddTransient<IChatClient>(provider =>
-        {
-            var llmOptions = provider.GetRequiredService<IOptions<LlmOptions>>();
-            var client = provider.GetRequiredService<OpenAIClient>();
+        services
+            .AddChatClient(provider =>
+            {
+                var llmOptions = provider.GetRequiredService<IOptions<LlmOptions>>();
+                var client = provider.GetRequiredService<OpenAIClient>();
 
-            return client.GetChatClient(llmOptions.Value.Model).AsIChatClient();
-        });
+                return client.GetChatClient(llmOptions.Value.Model).AsIChatClient();
+            })
+            .UseFunctionInvocation()
+            .UseLogging();
 
         services.AddTransient<IEmbeddingGenerator<string, Embedding<float>>>(provider =>
         {

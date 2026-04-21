@@ -34,8 +34,7 @@ namespace Backend.Migrations
                     LastMessageAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Summary = table.Column<string>(type: "TEXT", maxLength: 2048, nullable: true),
                     LastSummaryUpdate = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    ProjectId = table.Column<int>(type: "INTEGER", nullable: true),
-                    Importance = table.Column<float>(type: "REAL", nullable: true)
+                    ProjectId = table.Column<int>(type: "INTEGER", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -132,6 +131,26 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ChatUserPreferences",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Preference = table.Column<string>(type: "TEXT", maxLength: 255, nullable: false),
+                    ChatId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ChatUserPreferences", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ChatUserPreferences_Chats_ChatId",
+                        column: x => x.ChatId,
+                        principalTable: "Chats",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Messages",
                 columns: table => new
                 {
@@ -176,6 +195,21 @@ namespace Backend.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.InsertData(
+                table: "Chats",
+                columns: new[] { "Id", "LastMessageAt", "LastSummaryUpdate", "ProjectId", "Summary", "Title" },
+                values: new object[] { 2, null, null, null, null, "Chat 2" });
+
+            migrationBuilder.InsertData(
+                table: "Projects",
+                columns: new[] { "Id", "Name" },
+                values: new object[] { 1, "test" });
+
+            migrationBuilder.InsertData(
+                table: "Chats",
+                columns: new[] { "Id", "LastMessageAt", "LastSummaryUpdate", "ProjectId", "Summary", "Title" },
+                values: new object[] { 1, null, null, 1, null, "Chat 1" });
+
             migrationBuilder.CreateIndex(
                 name: "IX_ChatDecisions_ChatId",
                 table: "ChatDecisions",
@@ -194,6 +228,11 @@ namespace Backend.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_ChatTopics_ChatId",
                 table: "ChatTopics",
+                column: "ChatId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ChatUserPreferences_ChatId",
+                table: "ChatUserPreferences",
                 column: "ChatId");
 
             migrationBuilder.CreateIndex(
@@ -223,6 +262,9 @@ namespace Backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "ChatTopics");
+
+            migrationBuilder.DropTable(
+                name: "ChatUserPreferences");
 
             migrationBuilder.DropTable(
                 name: "DocumentChunks");
