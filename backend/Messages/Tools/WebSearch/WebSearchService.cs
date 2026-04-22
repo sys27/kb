@@ -10,7 +10,12 @@ public class WebSearchService
     public async Task<SearchResponse?> Search(string query, CancellationToken cancellationToken = default)
     {
         query = Uri.EscapeDataString(query);
-        var response = await client.GetAsync($"/search?q={query}&format=json", cancellationToken);
+        var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            { "q", query },
+            { "format", "json" }
+        });
+        var response = await client.PostAsync("/search", content, cancellationToken);
         var result = await response.Content.ReadFromJsonAsync<SearchResponse>(cancellationToken);
 
         return result;

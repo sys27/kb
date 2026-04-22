@@ -51,8 +51,11 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddAiClient(this IServiceCollection services)
+    public static IServiceCollection AddAiClient(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddSingleton<IValidateOptions<LlmOptions>, LlmOptions>();
+        services.Configure<LlmOptions>(configuration.GetSection(LlmOptions.Section));
+
         services.AddSingleton<OpenAIClient>(provider =>
         {
             var llmOptions = provider.GetRequiredService<IOptions<LlmOptions>>();

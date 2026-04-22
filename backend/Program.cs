@@ -4,14 +4,10 @@ using Backend.Messages;
 using Backend.Messages.Pipelines;
 using Backend.Projects;
 using Backend.Vectors;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddSingleton<IValidateOptions<LlmOptions>, LlmOptions>();
-builder.Services.Configure<LlmOptions>(builder.Configuration.GetSection(LlmOptions.Section));
 
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
@@ -23,7 +19,7 @@ builder.Services.AddValidation();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddDatabase(builder.Configuration, builder.Environment);
-builder.Services.AddAiClient();
+builder.Services.AddAiClient(builder.Configuration);
 builder.Services.AddIngestion(builder.Configuration);
 builder.Services.AddConversationPipeline(builder.Configuration);
 
