@@ -1,20 +1,19 @@
-import { defineConfig } from 'vite';
-import preact from '@preact/preset-vite';
-import tailwindcss from '@tailwindcss/vite';
+import { reactRouter } from "@react-router/dev/vite";
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from "vite";
 
-// https://vitejs.dev/config/
 export default defineConfig({
     server: {
         proxy: {
             '/api': {
-                target: 'http://localhost:5000',
+                target: 'http://localhost:5164',
                 changeOrigin: true,
                 secure: false,
             }
         }
     },
-    plugins: [
-        tailwindcss(),
-        preact(),
-    ],
+    plugins: [tailwindcss(), reactRouter()],
+    resolve: {
+        tsconfigPaths: true,
+    },
 });

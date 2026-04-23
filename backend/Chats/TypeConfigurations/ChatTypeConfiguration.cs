@@ -12,7 +12,7 @@ public class ChatTypeConfiguration : IEntityTypeConfiguration<Chat>
         builder.HasKey(e => e.Id)
             .HasName("PK_Chats");
 
-        builder.Property(e => e.Title)
+        builder.Property(e => e.Name)
             .IsRequired()
             .HasMaxLength(256);
 
@@ -28,7 +28,7 @@ public class ChatTypeConfiguration : IEntityTypeConfiguration<Chat>
             .HasConstraintName("FK_Chats_Projects_ProjectId");
 
         // TODO: remove
-        builder.HasData(new Chat { Id = 1, Title = "Chat 1", ProjectId = 1 });
-        builder.HasData(new Chat { Id = 2, Title = "Chat 2", ProjectId = null });
+        builder.HasData(new Chat { Id = 1, Name = "Chat 1", ProjectId = 1 });
+        builder.HasData(new Chat { Id = 2, Name = "Chat 2", ProjectId = null });
     }
 }

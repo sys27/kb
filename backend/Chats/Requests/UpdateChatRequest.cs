@@ -6,5 +6,5 @@ public class UpdateChatRequest
 {
     [Required]
     [MaxLength(256)]
-    public required string Title { get; set; }
+    public required string Name { get; set; }
 }

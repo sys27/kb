@@ -62,7 +62,7 @@ public static class ChatEndpoints
                 if (chat is null)
                     return Results.NotFound();
 
-                chat.Title = request.Title;
+                chat.Name = request.Name;
                 await context.SaveChangesAsync(cancellationToken);
 
                 var response = chat.ToResponse();

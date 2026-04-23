@@ -1,3 +1,3 @@
 namespace Backend.Chats.Responses;
 
-public record ChatListResponse(int Id, string Title);
+public record ChatListResponse(int Id, string Name, int? ProjectId);

@@ -7,7 +7,7 @@ public class Chat
 {
     public int Id { get; init; }
 
-    public required string Title { get; set; }
+    public required string Name { get; set; }
 
     public ICollection<Message> Messages { get; init; } = [];
 

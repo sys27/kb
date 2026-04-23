@@ -26,5 +26,7 @@
 **/*.db-wal
 **/dist
 **/wwwroot
+**/.react-router
+**/build
 LICENSE
 README.md
