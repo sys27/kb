@@ -33,5 +33,5 @@ USER kb
 
 WORKDIR /app
 COPY --from=publish /app/publish .
-COPY --from=node /src/build ./wwwroot
+COPY --from=node /src/build/client ./wwwroot
 ENTRYPOINT ["dotnet", "Backend.dll"]

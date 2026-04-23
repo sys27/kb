@@ -1,22 +1,25 @@
-import { Brain, FolderPlus, MessageCirclePlus, Settings } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
+import { Brain, Settings } from 'lucide-react';
+import { Collapsible } from '~/components/ui/collapsible';
 import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
-    SidebarGroup,
-    SidebarGroupAction,
-    SidebarGroupContent,
-    SidebarGroupLabel,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
 } from '~/components/ui/sidebar';
-import ChatMenuItem from './chat-menu-item';
-import ProjectMenuItem from './project-menu-item';
+import type { Chat } from '~/services/chats';
+import type { Project } from '~/services/projects';
+import ChatsMenuList from './chats-menu-list';
+import ProjectsMenuList from './projects-menu-list';
 
-export function SidebarComponent({ projects, chats }: { projects: any[]; chats: any[] }) {
+interface SidebarComponentProps {
+    projects: Project[];
+    chats: Chat[];
+}
+
+export function SidebarComponent({ projects, chats }: SidebarComponentProps) {
     return (
         <Sidebar
             variant="floating"
@@ -32,46 +35,15 @@ export function SidebarComponent({ projects, chats }: { projects: any[]; chats: 
                 <Collapsible
                     defaultOpen
                     className="group/collapsible">
-                    <SidebarGroup>
-                        <SidebarGroupLabel asChild>
-                            <CollapsibleTrigger>Projects</CollapsibleTrigger>
-                        </SidebarGroupLabel>
-                        <SidebarGroupAction>
-                            <FolderPlus />
-                        </SidebarGroupAction>
-                        <CollapsibleContent>
-                            <SidebarGroupContent>
-                                <SidebarMenu>
-                                    {projects.map(project => (
-                                        <ProjectMenuItem
-                                            key={project.id}
-                                            project={project}
-                                            chats={chats}
-                                        />
-                                    ))}
-                                </SidebarMenu>
-                            </SidebarGroupContent>
-                        </CollapsibleContent>
-                    </SidebarGroup>
+                    <ProjectsMenuList
+                        projects={projects}
+                        chats={chats}
+                    />
                 </Collapsible>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Chats</SidebarGroupLabel>
-                    <SidebarGroupAction>
-                        <MessageCirclePlus />
-                    </SidebarGroupAction>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            {chats
-                                .filter(x => x.projectId === null)
-                                .map(chat => (
-                                    <ChatMenuItem
-                                        key={chat.id}
-                                        chat={chat}
-                                    />
-                                ))}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
+                <ChatsMenuList
+                    projects={projects}
+                    chats={chats}
+                />
             </SidebarContent>
             <SidebarFooter>
                 <SidebarMenu>
