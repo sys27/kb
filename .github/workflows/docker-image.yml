@@ -84,7 +84,8 @@ jobs:
 
     - name: Generate artifact attestation
       uses: actions/attest@v4
+      if: github.event_name != 'pull_request'
       with:
         subject-name: ${{ env.GCR }}/${{ env.IMAGE_NAME }}
         subject-digest: ${{ steps.push.outputs.digest }}
-        push-to-registry: ${{ github.event_name != 'pull_request' }}
+        push-to-registry: true
