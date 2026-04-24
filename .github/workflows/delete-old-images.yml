@@ -1,0 +1,30 @@
+name: Delete Old Docker Images
+
+on:
+  schedule:
+  - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+permissions:
+  packages: write
+
+jobs:
+  delete-images:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Delete Untagged Images
+      uses: actions/delete-package-versions@v5
+      with: 
+        package-name: 'kb'
+        package-type: 'container'
+        min-versions-to-keep: 0
+        delete-only-untagged-versions: 'true'
+
+    - name: Delete Old Images
+      uses: actions/delete-package-versions@v5
+      with:
+        package-name: 'kb'
+        package-type: 'container'
+        min-versions-to-keep: 30
+        ignore-versions: '^(latest|master)$'

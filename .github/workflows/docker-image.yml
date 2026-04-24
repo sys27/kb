@@ -1,0 +1,90 @@
+name: Build Docker Image CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GCR: ghcr.io
+  IMAGE_NAME: sys27/kb
+  DOCKERHUB_USERNAME: sys27
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    # - name: Set up QEMU
+    #   uses: docker/setup-qemu-action@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v4
+
+    # - name: Login to Docker Hub
+    #   uses: docker/login-action@v3
+    #   if: github.ref == format('refs/heads/{0}', 'master')
+    #   with:
+    #     username: ${{ env.DOCKERHUB_USERNAME }}
+    #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v4
+      with:
+        registry: ${{ env.GCR }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Docker Metadata
+      id: meta
+      uses: docker/metadata-action@v6
+      with:
+        images: |
+          name=${{ env.GCR }}/${{ env.IMAGE_NAME }},enable=true
+        tags: |
+          type=ref,event=branch
+          type=ref,event=tag
+          type=ref,event=pr
+          type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
+
+    - name: Build and push images
+      id: push
+      uses: docker/build-push-action@v7
+      env:
+        DOCKER_BUILD_SUMMARY: false
+        DOCKER_BUILD_RECORD_UPLOAD: false
+        SOURCE_DATE_EPOCH: 0
+      with:
+        platforms: linux/amd64
+        context: .
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        annotations: ${{ steps.meta.outputs.annotations }}
+        provenance: mode=max
+        sbom: true
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Generate artifact attestation
+      uses: actions/attest@v4
+      with:
+        subject-name: ${{ env.GCR }}/${{ env.IMAGE_NAME }}
+        subject-digest: ${{ steps.push.outputs.digest }}
+        push-to-registry: ${{ github.event_name != 'pull_request' }}
