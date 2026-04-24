@@ -31,7 +31,7 @@
     "@types/node": "^25",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "eslint": "^8.57.1",
+    "eslint": "^10.2.1",
     "eslint-config-react-app": "^7.0.1",
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-tailwindcss": "^0.7.3",
