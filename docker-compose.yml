@@ -1,0 +1,18 @@
+services:
+  kb:
+    image: kb
+    container_name: kb
+    ports:
+      - "8080:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - LLM__Endpoint=
+      - LLM__ApiKey=
+      - LLM__Model=
+      - LLM__EmbeddingModel=
+      - Ingestion__Enabled=
+      - Summarization__Enabled=
+      - WebSearch__BaseUrl=
+    volumes:
+      - ./data:/data

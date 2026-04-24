@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0.203-alpine3.23 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.203 AS build
 ARG BUILD_CONFIGURATION=Release
 
 WORKDIR /src
@@ -21,14 +21,16 @@ RUN npm ci
 COPY ["./frontend/", "./"]
 RUN npm run build
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.7-alpine3.23 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.7 AS final
 EXPOSE 80
 HEALTHCHECK --interval=5s --timeout=5s CMD wget http://localhost/health -q -O - > /dev/null 2>&1
 
 ENV ASPNETCORE_ENVIRONMENT="Production"
 ENV ASPNETCORE_URLS="http://+:80"
 
-RUN addgroup -S kb && adduser -S kb -G kb
+RUN groupadd --system kb && useradd --system --no-create-home --gid kb kb
+RUN mkdir /data && chown kb:kb /data
+
 USER kb
 
 WORKDIR /app

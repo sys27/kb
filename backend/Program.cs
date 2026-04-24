@@ -3,8 +3,6 @@ using Backend.Chats;
 using Backend.Messages;
 using Backend.Messages.Pipelines;
 using Backend.Projects;
-using Backend.Vectors;
-using Microsoft.Extensions.VectorData;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,8 +43,6 @@ if (!app.Environment.IsDevelopment())
     app.UseSpa(_ => { });
 }
 
-// TODO: execute as a part of migrations?
-var vs = app.Services.GetRequiredService<VectorStoreCollection<int, Embeddings>>();
-await vs.EnsureCollectionExistsAsync();
+await app.InitializeDatabase();
 
 app.Run();
