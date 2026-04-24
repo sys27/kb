@@ -1,5 +1,6 @@
-import { Brain, Settings } from 'lucide-react';
-import { Collapsible } from '~/components/ui/collapsible';
+import { Brain, Moon, Settings, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 import {
     Sidebar,
     SidebarContent,
@@ -20,6 +21,13 @@ interface SidebarComponentProps {
 }
 
 export function SidebarComponent({ projects, chats }: SidebarComponentProps) {
+    let { theme, setTheme } = useTheme();
+    let [mounted, setMounted] = useState(false);
+
+    useEffect(() => setMounted(true), []);
+
+    if (!mounted) return null;
+
     return (
         <Sidebar
             variant="floating"
@@ -27,19 +35,15 @@ export function SidebarComponent({ projects, chats }: SidebarComponentProps) {
         >
             <SidebarHeader>
                 <div className="flex flex-row items-center justify-center gap-2">
-                    <Brain />
+                    <Brain strokeWidth={1.5} />
                     KB
                 </div>
             </SidebarHeader>
             <SidebarContent>
-                <Collapsible
-                    defaultOpen
-                    className="group/collapsible">
-                    <ProjectsMenuList
-                        projects={projects}
-                        chats={chats}
-                    />
-                </Collapsible>
+                <ProjectsMenuList
+                    projects={projects}
+                    chats={chats}
+                />
                 <ChatsMenuList
                     projects={projects}
                     chats={chats}
@@ -47,6 +51,12 @@ export function SidebarComponent({ projects, chats }: SidebarComponentProps) {
             </SidebarContent>
             <SidebarFooter>
                 <SidebarMenu>
+                    <SidebarMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                        <SidebarMenuButton>
+                            {theme === 'light' ? <Sun /> : <Moon />}
+                            Theme
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton>
                             <Settings />

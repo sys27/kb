@@ -1,5 +1,6 @@
-import { MessageCirclePlus } from 'lucide-react';
+import { ChevronRight, MessageCirclePlus } from 'lucide-react';
 import { useState } from 'react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
 import {
     SidebarGroup,
     SidebarGroupAction,
@@ -21,73 +22,40 @@ export default function ChatsMenuList({ projects, chats }: ChatsMenuListProps) {
     let [openNewDialog, setOpenNewDialog] = useState(false);
 
     return (
-        <SidebarGroup>
-            <SidebarGroupLabel>Chats</SidebarGroupLabel>
-            <SidebarGroupAction>
-                <MessageCirclePlus onClick={() => setOpenNewDialog(true)} />
+        <Collapsible
+            defaultOpen
+            className="group/collapsible">
+            <SidebarGroup>
+                <SidebarGroupLabel asChild>
+                    <CollapsibleTrigger>
+                        <ChevronRight className="transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                        Chats
+                    </CollapsibleTrigger>
+                </SidebarGroupLabel>
+                <SidebarGroupAction>
+                    <MessageCirclePlus onClick={() => setOpenNewDialog(true)} />
 
-                <ChatNewDialog
-                    projects={projects}
-                    open={openNewDialog}
-                    onOpenChange={setOpenNewDialog}
-                />
-                {/* <Dialog>
-                    <DialogTrigger asChild>
-                        <MessageCirclePlus />
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Create Chat</DialogTitle>
-                        </DialogHeader>
-                        <FieldGroup>
-                            <Field>
-                                <Label htmlFor="chatName">Name</Label>
-                                <Input
-                                    id="chatName"
-                                    name="name"
-                                />
-                            </Field>
-                            <Field>
-                                <Label htmlFor="projectId">Project</Label>
-                                <Select>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select a project" />
-                                    </SelectTrigger>
-                                    <SelectContent position="popper">
-                                        <SelectGroup>
-                                            {projects.map(project => (
-                                                <SelectItem
-                                                    key={project.id}
-                                                    value={project.id.toString()}>
-                                                    {project.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-                            </Field>
-                        </FieldGroup>
-                        <DialogFooter>
-                            <Button type="submit">Ok</Button>
-                            <DialogClose asChild>
-                                <Button variant="outline">Cancel</Button>
-                            </DialogClose>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog> */}
-            </SidebarGroupAction>
-            <SidebarGroupContent>
-                <SidebarMenu>
-                    {chats
-                        .filter(x => x.projectId === null)
-                        .map(chat => (
-                            <ChatMenuItem
-                                key={chat.id}
-                                chat={chat}
-                            />
-                        ))}
-                </SidebarMenu>
-            </SidebarGroupContent>
-        </SidebarGroup>
+                    <ChatNewDialog
+                        projects={projects}
+                        open={openNewDialog}
+                        onOpenChange={setOpenNewDialog}
+                    />
+                </SidebarGroupAction>
+                <CollapsibleContent>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            {chats
+                                .filter(x => x.projectId === null)
+                                .map(chat => (
+                                    <ChatMenuItem
+                                        key={chat.id}
+                                        chat={chat}
+                                    />
+                                ))}
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </CollapsibleContent>
+            </SidebarGroup>
+        </Collapsible>
     );
 }

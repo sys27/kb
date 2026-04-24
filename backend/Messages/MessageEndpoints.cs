@@ -15,7 +15,7 @@ public static class MessageEndpoints
             {
                 var messages = await context.Messages
                     .Where(m => m.ChatId == chatId)
-                    .OrderByDescending(m => m.Id)
+                    .OrderBy(m => m.Id)
                     .ToResponse()
                     .ToListAsync(cancellationToken);
 

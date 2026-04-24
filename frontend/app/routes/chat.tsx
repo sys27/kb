@@ -1,51 +1,97 @@
+import { FileText, MessageCircle, Plus, Search, Send } from 'lucide-react';
+import MessageItem from '~/blocks/message-item';
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu';
+import {
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from '~/components/ui/empty';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupTextarea,
+} from '~/components/ui/input-group';
 import { ScrollArea } from '~/components/ui/scroll-area';
-import { Textarea } from '~/components/ui/textarea';
+import { getMessages } from '~/services/messages';
 import type { Route } from './+types/chat';
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-    return [
-        {
-            id: 1,
-            role: 'user',
-            text: 'Hi.',
-        },
-        {
-            id: 2,
-            role: 'assistant',
-            text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
-        },
-        {
-            id: 3,
-            role: 'assistant',
-            text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
-        },
-        {
-            id: 4,
-            role: 'assistant',
-            text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
-        },
-        {
-            id: 5,
-            role: 'assistant',
-            text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',
-        },
-        {
-            id: 6,
-            role: 'user',
-            text: "That's interesting. Tell me more.",
-        },
-    ];
+    let chatId = Number(params.chatId);
+    let messages = await getMessages(chatId);
+
+    return { messages };
 }
 
-export default function Chat({ loaderData, params }: Route.ComponentProps) {
+export default function Chat({ loaderData }: Route.ComponentProps) {
+    let { messages } = loaderData;
+
     return (
-        <div className="flex flex-col w-full h-screen gap-4 p-4">
+        <div className="flex h-screen w-full flex-col gap-4 p-2">
             <ScrollArea className="flex-1 overflow-y-auto">
-                {loaderData.map(message => (
-                    <div key={message.id}>{message.text}</div>
-                ))}
+                <div className="flex flex-col gap-2 p-1">
+                    {messages.length > 0 ? (
+                        messages.map(message => (
+                            <MessageItem
+                                key={message.id}
+                                message={message}
+                            />
+                        ))
+                    ) : (
+                        <Empty>
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <MessageCircle />
+                                </EmptyMedia>
+                                <EmptyTitle>No Messages Yet</EmptyTitle>
+                                <EmptyDescription>
+                                    You haven&apos;t sent any messages yet. Get started by sending
+                                    your first message.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
+                    )}
+                </div>
             </ScrollArea>
-            <Textarea placeholder="Ask anything..." />
+            <InputGroup className="flex-none">
+                <InputGroupTextarea
+                    id="message"
+                    placeholder="Ask anything..."
+                    className="max-h-20 min-h-20"
+                />
+                <InputGroupAddon
+                    align="block-end"
+                    className="flex flex-row justify-between">
+                    <InputGroupButton>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger>
+                                <Plus />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-48">
+                                <DropdownMenuItem disabled>
+                                    <FileText />
+                                    Add File
+                                </DropdownMenuItem>
+                                <DropdownMenuCheckboxItem checked={true}>
+                                    <Search />
+                                    Web Search
+                                </DropdownMenuCheckboxItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </InputGroupButton>
+                    <InputGroupButton>
+                        <Send />
+                    </InputGroupButton>
+                </InputGroupAddon>
+            </InputGroup>
         </div>
     );
 }

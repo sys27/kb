@@ -4,7 +4,6 @@ using Backend.Messages;
 using Backend.Projects;
 using Backend.Vectors;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Backend;
 
@@ -20,22 +19,6 @@ public class KbDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(KbDbContext).Assembly);
-
-        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-        {
-            var properties = entityType.ClrType
-                .GetProperties()
-                .Where(p => p.PropertyType == typeof(DateTimeOffset) ||
-                            p.PropertyType == typeof(DateTimeOffset?));
-
-            foreach (var property in properties)
-            {
-                modelBuilder
-                    .Entity(entityType.Name)
-                    .Property(property.Name)
-                    .HasConversion(new DateTimeOffsetToBinaryConverter());
-            }
-        }
     }
 
     public async Task<string?> GetEmbeddingsContent(Embeddings embeddings, CancellationToken cancellationToken = default)

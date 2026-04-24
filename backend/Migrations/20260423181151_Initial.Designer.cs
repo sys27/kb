@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(KbDbContext))]
-    [Migration("20260423100608_Initial")]
+    [Migration("20260423181151_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -228,11 +228,13 @@ namespace Backend.Migrations
                     b.Property<int>("ChatId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Kind")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Text")
                         .IsRequired()

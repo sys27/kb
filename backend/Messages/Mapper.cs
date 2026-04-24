@@ -5,7 +5,7 @@ namespace Backend.Messages;
 
 [Mapper(
     EnumMappingIgnoreCase = true,
-    EnumMappingStrategy = EnumMappingStrategy.ByValue,
+    EnumMappingStrategy = EnumMappingStrategy.ByValueCheckDefined,
     RequiredMappingStrategy = RequiredMappingStrategy.Target)]
 public static partial class Mapper
 {

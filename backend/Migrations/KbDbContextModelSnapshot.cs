@@ -225,11 +225,13 @@ namespace Backend.Migrations
                     b.Property<int>("ChatId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Kind")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Text")
                         .IsRequired()

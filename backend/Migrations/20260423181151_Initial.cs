@@ -156,8 +156,8 @@ namespace Backend.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Role = table.Column<int>(type: "INTEGER", nullable: false),
-                    Kind = table.Column<int>(type: "INTEGER", nullable: false),
+                    Role = table.Column<string>(type: "TEXT", nullable: false),
+                    Kind = table.Column<string>(type: "TEXT", nullable: false),
                     Text = table.Column<string>(type: "TEXT", nullable: false),
                     Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false),
                     ChatId = table.Column<int>(type: "INTEGER", nullable: false)

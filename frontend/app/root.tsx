@@ -10,6 +10,7 @@ import {
 import { TooltipProvider } from '~/components/ui/tooltip';
 import type { Route } from './+types/root';
 import './app.css';
+import { ThemeProvider } from './blocks/theme-provider';
 
 export function Layout({ children }: { children: React.ReactNode }) {
     return (
@@ -26,7 +27,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <Links />
             </head>
             <body>
-                <TooltipProvider>{children}</TooltipProvider>
+                <ThemeProvider>
+                    <TooltipProvider>{children}</TooltipProvider>
+                </ThemeProvider>
                 <ScrollRestoration />
                 <Scripts />
             </body>
@@ -39,6 +42,7 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+    // TODO: improve error handling and display
     let message = 'Oops!';
     let details = 'An unexpected error occurred.';
     let stack: string | undefined;
