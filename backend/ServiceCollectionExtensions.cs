@@ -87,12 +87,14 @@ public static class ServiceCollectionExtensions
             return client.GetEmbeddingClient(llmOptions.Value.EmbeddingModel).AsIEmbeddingGenerator();
         });
 
-        services.AddSingleton<Tokenizer>(_ =>
+        services.AddSingleton<Tokenizer>(provider =>
         {
-            var bpeOptions = new BpeOptions("Tokenizers/qwen3/vocab.json", "Tokenizers/qwen3/merges.txt");
-            var tokenizer = BpeTokenizer.Create(bpeOptions);
+            var llmOptions = provider.GetRequiredService<IOptions<LlmOptions>>().Value;
+            var bpeOptions = new BpeOptions(
+                $"Tokenizers/{llmOptions.Tokenizer}/vocab.json",
+                $"Tokenizers/{llmOptions.Tokenizer}/merges.txt");
 
-            return tokenizer;
+            return BpeTokenizer.Create(bpeOptions);
         });
 
         return services;

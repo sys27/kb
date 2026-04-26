@@ -11,7 +11,7 @@ import {
 import type { Chat } from '~/services/chats';
 import type { Project } from '~/services/projects';
 import ProjectMenuItem from './project-menu-item';
-import ProjectNewEditDialog from './project-new-edit-dialog';
+import ProjectNewDialog from './project-new-dialog';
 
 interface ProjectsMenuListProps {
     projects: Project[];
@@ -35,7 +35,7 @@ export default function ProjectsMenuList({ projects, chats }: ProjectsMenuListPr
                 <SidebarGroupAction>
                     <FolderPlus onClick={() => setOpenNewDialog(true)} />
 
-                    <ProjectNewEditDialog
+                    <ProjectNewDialog
                         open={openNewDialog}
                         onOpenChange={setOpenNewDialog}
                     />

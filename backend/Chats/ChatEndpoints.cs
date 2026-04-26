@@ -20,7 +20,7 @@ public static class ChatEndpoints
                 return chats;
             })
             .Produces<List<ChatListResponse>>()
-            .ProducesProblem(500)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("GetChats")
             .WithSummary("Get all chats");
 
@@ -34,7 +34,7 @@ public static class ChatEndpoints
             })
             .Produces<ChatListResponse>()
             .Produces(404)
-            .ProducesProblem(500)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("GetChat")
             .WithSummary("Get a chat by id");
 
@@ -48,7 +48,7 @@ public static class ChatEndpoints
             })
             .Produces<ChatListResponse>()
             .ProducesProblem(400)
-            .ProducesProblem(500)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("CreateChat")
             .WithSummary("Create a new chat");
 
@@ -70,9 +70,9 @@ public static class ChatEndpoints
                 return Results.Ok(response);
             })
             .Produces<ChatListResponse>()
-            .ProducesProblem(400)
-            .ProducesProblem(404)
-            .ProducesProblem(500)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("UpdateChat")
             .WithSummary("Update a chat by id");
 
@@ -87,8 +87,8 @@ public static class ChatEndpoints
 
                 return Results.NoContent();
             })
-            .Produces(204)
-            .ProducesProblem(500)
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("DeleteChat")
             .WithSummary("Delete a chat by id");
 

@@ -22,7 +22,7 @@ public static class MessageEndpoints
                 return Results.Ok(messages);
             })
             .Produces<List<MessageListResponse>>()
-            .ProducesProblem(500)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("GetMessages")
             .WithSummary("Get all messages for a chat");
 
@@ -40,9 +40,9 @@ public static class MessageEndpoints
                 await conversationPipeline.Run(pipelineContext, cancellationToken);
             })
             .Produces(StatusCodes.Status200OK, null, "text/event-stream")
-            .ProducesProblem(400)
-            .ProducesProblem(404)
-            .ProducesProblem(500)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("SendMessage")
             .WithSummary("Send a message to a chat");
 

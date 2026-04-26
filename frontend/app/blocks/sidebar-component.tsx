@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { Brain, Moon, Settings, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
@@ -5,28 +6,27 @@ import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
 } from '~/components/ui/sidebar';
-import type { Chat } from '~/services/chats';
-import type { Project } from '~/services/projects';
+import { Skeleton } from '~/components/ui/skeleton';
+import { chatsOptions } from '~/services/chats';
+import { projectsOptions } from '~/services/projects';
 import ChatsMenuList from './chats-menu-list';
 import ProjectsMenuList from './projects-menu-list';
 
-interface SidebarComponentProps {
-    projects: Project[];
-    chats: Chat[];
-}
-
-export function SidebarComponent({ projects, chats }: SidebarComponentProps) {
+export function SidebarComponent() {
     let { theme, setTheme } = useTheme();
     let [mounted, setMounted] = useState(false);
-
     useEffect(() => setMounted(true), []);
 
-    if (!mounted) return null;
+    let { data: projects, isPending: isProjectsPending } = useQuery(projectsOptions);
+    let { data: chats, isPending: isChatsPending } = useQuery(chatsOptions);
 
     return (
         <Sidebar
@@ -40,20 +40,47 @@ export function SidebarComponent({ projects, chats }: SidebarComponentProps) {
                 </div>
             </SidebarHeader>
             <SidebarContent>
-                <ProjectsMenuList
-                    projects={projects}
-                    chats={chats}
-                />
-                <ChatsMenuList
-                    projects={projects}
-                    chats={chats}
-                />
+                {isProjectsPending || isChatsPending ? (
+                    <>
+                        <SidebarGroup>
+                            <SidebarGroupLabel>Projects</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    <Skeleton className="h-8 w-full" />
+                                    <Skeleton className="h-8 w-full" />
+                                    <Skeleton className="h-8 w-full" />
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+                        <SidebarGroup>
+                            <SidebarGroupLabel>Chats</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    <Skeleton className="h-8 w-full" />
+                                    <Skeleton className="h-8 w-full" />
+                                    <Skeleton className="h-8 w-full" />
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+                    </>
+                ) : (
+                    <>
+                        <ProjectsMenuList
+                            projects={projects!}
+                            chats={chats!}
+                        />
+                        <ChatsMenuList
+                            projects={projects!}
+                            chats={chats!}
+                        />
+                    </>
+                )}
             </SidebarContent>
             <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
                         <SidebarMenuButton>
-                            {theme === 'light' ? <Sun /> : <Moon />}
+                            {mounted ? theme === 'light' ? <Sun /> : <Moon /> : null}
                             Theme
                         </SidebarMenuButton>
                     </SidebarMenuItem>

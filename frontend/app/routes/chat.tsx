@@ -1,5 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { FileText, MessageCircle, Plus, Search, Send } from 'lucide-react';
 import MessageItem from '~/blocks/message-item';
+import MessageSkeletonItem from '~/blocks/message-skeleton-item';
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -21,24 +23,24 @@ import {
     InputGroupTextarea,
 } from '~/components/ui/input-group';
 import { ScrollArea } from '~/components/ui/scroll-area';
-import { getMessages } from '~/services/messages';
+import { messagesOptions } from '~/services/messages';
 import type { Route } from './+types/chat';
 
-export async function clientLoader({ params }: Route.ClientLoaderArgs) {
+export default function Chat({ params }: Route.ComponentProps) {
     let chatId = Number(params.chatId);
-    let messages = await getMessages(chatId);
-
-    return { messages };
-}
-
-export default function Chat({ loaderData }: Route.ComponentProps) {
-    let { messages } = loaderData;
+    let { data: messages, isPending } = useQuery(messagesOptions(chatId));
 
     return (
         <div className="flex h-screen w-full flex-col gap-4 p-2">
             <ScrollArea className="flex-1 overflow-y-auto">
                 <div className="flex flex-col gap-2 p-1">
-                    {messages.length > 0 ? (
+                    {isPending ? (
+                        <>
+                            <MessageSkeletonItem />
+                            <MessageSkeletonItem />
+                            <MessageSkeletonItem />
+                        </>
+                    ) : messages && messages.length > 0 ? (
                         messages.map(message => (
                             <MessageItem
                                 key={message.id}
@@ -72,7 +74,7 @@ export default function Chat({ loaderData }: Route.ComponentProps) {
                     className="flex flex-row justify-between">
                     <InputGroupButton>
                         <DropdownMenu>
-                            <DropdownMenuTrigger>
+                            <DropdownMenuTrigger asChild>
                                 <Plus />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-48">

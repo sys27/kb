@@ -14,6 +14,8 @@ public class LlmOptions : IValidateOptions<LlmOptions>
 
     public required string EmbeddingModel { get; set; }
 
+    public required string Tokenizer { get; set; }
+
     public ValidateOptionsResult Validate(string? name, LlmOptions options)
     {
         var failures = new List<string>();
@@ -29,6 +31,9 @@ public class LlmOptions : IValidateOptions<LlmOptions>
 
         if (string.IsNullOrWhiteSpace(options.EmbeddingModel))
             failures.Add("EmbeddingModel cannot be null or whitespace");
+
+        if (string.IsNullOrWhiteSpace(options.Tokenizer))
+            failures.Add("Tokenizer cannot be null or whitespace");
 
         return failures.Count > 0
             ? ValidateOptionsResult.Fail(failures)

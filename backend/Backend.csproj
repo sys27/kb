@@ -26,15 +26,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Projects\Requests\" />
-    <Folder Include="Tokenizers\" />
-    <Folder Include="Tokenizers\qwen3\" />
+    <Folder Include="Tokenizers\qwen3-0.6b\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Tokenizers\qwen3\merges.txt" />
-    <Content Include="Tokenizers\qwen3\merges.txt">
+    <None Remove="Tokenizers\qwen3-0.6b\merges.txt" />
+    <Content Include="Tokenizers\qwen3-0.6b\merges.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

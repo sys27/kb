@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query';
 import { Ellipsis, Folder, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
@@ -23,10 +24,11 @@ import {
     SidebarMenuItem,
     SidebarMenuSub,
 } from '~/components/ui/sidebar';
+import { Spinner } from '~/components/ui/spinner';
 import type { Chat } from '~/services/chats';
-import type { Project } from '~/services/projects';
+import { deleteProject, projectsOptions, type Project } from '~/services/projects';
 import ChatMenuItem from './chat-menu-item';
-import ProjectNewEditDialog from './project-new-edit-dialog';
+import ProjectEditDialog from './project-edit-dialog';
 
 interface ProjectMenuItemProps {
     project: Project;
@@ -36,6 +38,14 @@ interface ProjectMenuItemProps {
 export default function ProjectMenuItem({ project, chats }: ProjectMenuItemProps) {
     let [openEditDialog, setOpenEditDialog] = useState(false);
     let [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    let deleteMutation = useMutation({
+        mutationFn: () => deleteProject(project.id),
+        onSuccess: () => {
+            setOpenDeleteDialog(false);
+        },
+        onSettled: (data, error, variables, onMutateResult, context) =>
+            context.client.invalidateQueries(projectsOptions),
+    });
 
     return (
         <SidebarMenuItem
@@ -66,7 +76,7 @@ export default function ProjectMenuItem({ project, chats }: ProjectMenuItemProps
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                <ProjectNewEditDialog
+                <ProjectEditDialog
                     project={project}
                     open={openEditDialog}
                     onOpenChange={setOpenEditDialog}
@@ -84,7 +94,16 @@ export default function ProjectMenuItem({ project, chats }: ProjectMenuItemProps
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogAction variant="destructive">Delete</AlertDialogAction>
+                            <AlertDialogAction
+                                variant="destructive"
+                                onClick={e => {
+                                    e.preventDefault();
+                                    deleteMutation.mutate();
+                                }}
+                                disabled={deleteMutation.isPending}>
+                                {deleteMutation.isPending && <Spinner data-icon="inline-start" />}
+                                Delete
+                            </AlertDialogAction>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                         </AlertDialogFooter>
                     </AlertDialogContent>
