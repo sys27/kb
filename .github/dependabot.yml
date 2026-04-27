@@ -24,6 +24,9 @@ updates:
       react-router:
         patterns:
           - "*react-router*"
+      react-query:
+        patterns:
+          - "@tanstack/*-query"
 
   - package-ecosystem: docker
     directory: "/"
