@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Backend.Projects;
 using Backend.Vectors;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,7 @@ using Microsoft.Extensions.VectorData;
 
 namespace Backend.Ingestion;
 
-public class IngestionBackgroundService : BackgroundService
+public partial class IngestionBackgroundService : BackgroundService
 {
     private readonly IngestionOptions options;
     private readonly ILogger<IngestionBackgroundService> logger;
@@ -23,6 +24,9 @@ public class IngestionBackgroundService : BackgroundService
     ];
 
     private const string ProjectPrefix = "project-";
+
+    [GeneratedRegex(@"project-(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
+    private static partial Regex GetProjectRegex();
 
     public IngestionBackgroundService(
         IOptions<IngestionOptions> options,
@@ -166,9 +170,16 @@ public class IngestionBackgroundService : BackgroundService
         foreach (var directory in directories)
         {
             var di = new DirectoryInfo(directory);
-            if (!di.Name.StartsWith(ProjectPrefix, StringComparison.OrdinalIgnoreCase))
+            var match = GetProjectRegex().Match(di.Name);
+            if (!match.Success)
             {
                 logger.LogWarning("Skipping directory '{DirectoryName}'", di.Name);
+                continue;
+            }
+
+            if (!int.TryParse(match.Groups[1].Value, out var projectId))
+            {
+                logger.LogWarning("Project ID not found in directory name '{DirectoryName}'", di.Name);
                 continue;
             }
 
@@ -179,7 +190,7 @@ public class IngestionBackgroundService : BackgroundService
                 continue;
             }
 
-            filesToProcess.Add(new DirectoryFile(di.Name, files));
+            filesToProcess.Add(new DirectoryFile(projectId, files));
         }
 
         return filesToProcess;
@@ -194,19 +205,17 @@ public class IngestionBackgroundService : BackgroundService
         var documentsToUpdate = new List<DocumentUpdate>();
         var documentsToRemove = new List<Document>();
 
-        foreach (var (directoryName, files) in filesToProcess)
+        foreach (var (projectId, files) in filesToProcess)
         {
-            // TODO: better way to map projects to directories
-            var projectName = directoryName[ProjectPrefix.Length..];
             var project = dbContext.Projects
                 .Include(x => x.Documents)
                 .ThenInclude(x => x.DocumentChunks)
                 .AsSplitQuery()
-                .FirstOrDefault(p => p.Name == projectName);
+                .FirstOrDefault(p => p.Id == projectId);
 
             if (project is null)
             {
-                logger.LogWarning("Project '{ProjectName}' not found in database", projectName);
+                logger.LogWarning("Project '{ProjectName}' not found in database", projectId);
                 continue;
             }
 
@@ -238,7 +247,7 @@ public class IngestionBackgroundService : BackgroundService
             }
 
             foreach (var document in project.Documents)
-                if (!File.Exists(Path.Combine(options.Path, directoryName, document.Name)))
+                if (!File.Exists(Path.Combine(options.Path, $"{ProjectPrefix}{projectId}", document.Name)))
                     documentsToRemove.Add(document);
         }
 
@@ -273,7 +282,7 @@ public class IngestionBackgroundService : BackgroundService
         }
     }
 
-    private readonly record struct DirectoryFile(string DirectoryName, string[] Files);
+    private readonly record struct DirectoryFile(int ProjectId, string[] Files);
 
     private readonly record struct DocumentChanges(
         List<DocumentToAdd> DocumentsToAdd,

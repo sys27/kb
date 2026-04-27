@@ -10,9 +10,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '~/components/ui/dialog';
-import { Field, FieldError, FieldGroup } from '~/components/ui/field';
+import { Field, FieldError, FieldGroup, FieldLabel } from '~/components/ui/field';
 import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -113,7 +112,7 @@ export default function ChatNewDialog({ projects, open, onOpenChange }: ChatNewD
 
                                 return (
                                     <Field data-invalid={isInvalid}>
-                                        <Label htmlFor={field.name}>Name</Label>
+                                        <FieldLabel htmlFor={field.name}>Name</FieldLabel>
                                         <Input
                                             id={field.name}
                                             name={field.name}
@@ -139,7 +138,7 @@ export default function ChatNewDialog({ projects, open, onOpenChange }: ChatNewD
 
                                 return (
                                     <Field data-invalid={isInvalid}>
-                                        <Label htmlFor={field.name}>Project</Label>
+                                        <FieldLabel htmlFor={field.name}>Project</FieldLabel>
                                         <Select
                                             name={field.name}
                                             value={field.state.value}

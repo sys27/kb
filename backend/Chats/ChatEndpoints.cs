@@ -14,6 +14,7 @@ public static class ChatEndpoints
             {
                 var chats = await context.Chats
                     .OrderByDescending(x => x.Id)
+                    .AsNoTracking()
                     .ToResponse()
                     .ToListAsync(cancellationToken);
 

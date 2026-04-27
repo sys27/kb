@@ -7,7 +7,7 @@ namespace Backend.Messages;
     EnumMappingIgnoreCase = true,
     EnumMappingStrategy = EnumMappingStrategy.ByValueCheckDefined,
     RequiredMappingStrategy = RequiredMappingStrategy.Target)]
-public static partial class Mapper
+public static partial class MessageMapper
 {
     public static partial MessageListResponse ToResponse(this Message chat);
 

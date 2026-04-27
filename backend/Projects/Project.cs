@@ -12,4 +12,7 @@ public class Project
     public ICollection<Chat> Chats { get; init; } = new List<Chat>();
 
     public ICollection<Document> Documents { get; init; } = new List<Document>();
+
+    public string GetDirectoryName()
+        => $"project-{Id}";
 }

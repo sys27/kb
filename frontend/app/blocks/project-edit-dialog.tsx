@@ -10,9 +10,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '~/components/ui/dialog';
-import { Field, FieldError, FieldGroup } from '~/components/ui/field';
+import { Field, FieldError, FieldGroup, FieldLabel } from '~/components/ui/field';
 import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
 import { Spinner } from '~/components/ui/spinner';
 import { projectsOptions, updateProject, type Project } from '~/services/projects';
 
@@ -102,7 +101,7 @@ export default function ProjectEditDialog({ project, open, onOpenChange }: Proje
 
                                 return (
                                     <Field data-invalid={isInvalid}>
-                                        <Label htmlFor={field.name}>Name</Label>
+                                        <FieldLabel htmlFor={field.name}>Name</FieldLabel>
                                         <Input
                                             id={field.name}
                                             name={field.name}

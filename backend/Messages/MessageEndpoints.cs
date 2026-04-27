@@ -16,6 +16,7 @@ public static class MessageEndpoints
                 var messages = await context.Messages
                     .Where(m => m.ChatId == chatId)
                     .OrderBy(m => m.Id)
+                    .AsNoTracking()
                     .ToResponse()
                     .ToListAsync(cancellationToken);
 
