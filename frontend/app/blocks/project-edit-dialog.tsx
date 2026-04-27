@@ -35,7 +35,7 @@ export default function ProjectEditDialog({ project, open, onOpenChange }: Proje
     let form = useForm({
         defaultValues: {
             projectName: project.name,
-        },
+        } as FormType,
         validators: {
             onChange: FormSchema,
         },

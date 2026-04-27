@@ -33,7 +33,7 @@ public static class ChatEndpoints
                 return Results.Ok(chat.ToResponse());
             })
             .Produces<ChatListResponse>()
-            .Produces(404)
+            .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("GetChat")
             .WithSummary("Get a chat by id");
@@ -47,7 +47,7 @@ public static class ChatEndpoints
                 return Results.Created($"/chats/{chat.Id}", chat.ToResponse());
             })
             .Produces<ChatListResponse>()
-            .ProducesProblem(400)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("CreateChat")
             .WithSummary("Create a new chat");

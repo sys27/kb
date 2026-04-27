@@ -1,3 +1,6 @@
+import { useForm } from '@tanstack/react-form';
+import { useMutation } from '@tanstack/react-query';
+import z from 'zod';
 import { Button } from '~/components/ui/button';
 import {
     Dialog,
@@ -7,7 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '~/components/ui/dialog';
-import { Field, FieldGroup } from '~/components/ui/field';
+import { Field, FieldError, FieldGroup } from '~/components/ui/field';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
 import {
@@ -18,6 +21,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '~/components/ui/select';
+import { Spinner } from '~/components/ui/spinner';
+import { chatsOptions, createChat, type Chat } from '~/services/chats';
 import type { Project } from '~/services/projects';
 
 interface ChatNewDialogProps {
@@ -26,50 +31,155 @@ interface ChatNewDialogProps {
     onOpenChange: (open: boolean) => void;
 }
 
+let FormSchema = z.object({
+    chatName: z
+        .string()
+        .min(1, 'Chat name is required')
+        .max(256, 'Chat name must be less than 256 characters'),
+    projectId: z.string().optional(),
+});
+
+type FormType = z.infer<typeof FormSchema>;
+
 export default function ChatNewDialog({ projects, open, onOpenChange }: ChatNewDialogProps) {
+    let form = useForm({
+        defaultValues: {
+            chatName: '',
+            projectId: undefined,
+        } as FormType,
+        validators: {
+            onChange: FormSchema,
+        },
+        onSubmit: values => {
+            mutation.mutate(values.value, {
+                onSuccess: () => {
+                    onOpenChange(false);
+                },
+            });
+        },
+    });
+    let mutation = useMutation({
+        mutationFn: (form: FormType) =>
+            createChat(form.chatName, form.projectId ? parseInt(form.projectId) : undefined),
+        onMutate: async (newChat, context) => {
+            await context.client.cancelQueries(chatsOptions);
+
+            let previousChats = context.client.getQueryData(chatsOptions.queryKey);
+            if (previousChats) {
+                context.client.setQueryData(chatsOptions.queryKey, [
+                    {
+                        id: Math.random(),
+                        name: newChat.chatName,
+                        projectId: newChat.projectId ? parseInt(newChat.projectId) : null,
+                    },
+                    ...previousChats,
+                ]);
+            }
+
+            return { previousChats };
+        },
+        onError: (err, variables, onMutateResult, context) => {
+            if (onMutateResult?.previousChats) {
+                context.client.setQueryData<Chat[]>(
+                    chatsOptions.queryKey,
+                    onMutateResult.previousChats,
+                );
+            }
+        },
+        onSettled: (data, error, variables, onMutateResult, context) =>
+            context.client.invalidateQueries(chatsOptions),
+    });
+
     return (
         <Dialog
             open={open}
             onOpenChange={onOpenChange}>
             <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Create Chat</DialogTitle>
-                </DialogHeader>
-                <FieldGroup>
-                    <Field>
-                        <Label htmlFor="chatName">Name</Label>
-                        <Input
-                            id="chatName"
-                            name="name"
-                            required
+                <form
+                    className="contents"
+                    onSubmit={e => {
+                        e.preventDefault();
+                        form.handleSubmit();
+                    }}>
+                    <DialogHeader>
+                        <DialogTitle>Create Chat</DialogTitle>
+                    </DialogHeader>
+                    <FieldGroup>
+                        <form.Field
+                            name="chatName"
+                            children={field => {
+                                const isInvalid =
+                                    field.state.meta.isTouched && !field.state.meta.isValid;
+
+                                return (
+                                    <Field data-invalid={isInvalid}>
+                                        <Label htmlFor={field.name}>Name</Label>
+                                        <Input
+                                            id={field.name}
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onBlur={field.handleBlur}
+                                            onChange={e => field.handleChange(e.target.value)}
+                                            aria-invalid={isInvalid}
+                                            required
+                                        />
+                                        {isInvalid && (
+                                            <FieldError errors={field.state.meta.errors} />
+                                        )}
+                                    </Field>
+                                );
+                            }}
                         />
-                    </Field>
-                    <Field>
-                        <Label htmlFor="projectId">Project</Label>
-                        <Select>
-                            <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select a project" />
-                            </SelectTrigger>
-                            <SelectContent position="popper">
-                                <SelectGroup>
-                                    {projects.map(project => (
-                                        <SelectItem
-                                            key={project.id}
-                                            value={project.id.toString()}>
-                                            {project.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                    </Field>
-                </FieldGroup>
-                <DialogFooter>
-                    <Button type="submit">Ok</Button>
-                    <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                </DialogFooter>
+
+                        <form.Field
+                            name="projectId"
+                            children={field => {
+                                const isInvalid =
+                                    field.state.meta.isTouched && !field.state.meta.isValid;
+
+                                return (
+                                    <Field data-invalid={isInvalid}>
+                                        <Label htmlFor={field.name}>Project</Label>
+                                        <Select
+                                            name={field.name}
+                                            value={field.state.value}
+                                            onValueChange={field.handleChange}>
+                                            <SelectTrigger
+                                                aria-invalid={isInvalid}
+                                                className="w-full">
+                                                <SelectValue placeholder="Select a project" />
+                                            </SelectTrigger>
+                                            <SelectContent position="popper">
+                                                <SelectGroup>
+                                                    {projects.map(project => (
+                                                        <SelectItem
+                                                            key={project.id}
+                                                            value={project.id.toString()}>
+                                                            {project.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectGroup>
+                                            </SelectContent>
+                                        </Select>
+                                        {isInvalid && (
+                                            <FieldError errors={field.state.meta.errors} />
+                                        )}
+                                    </Field>
+                                );
+                            }}
+                        />
+                    </FieldGroup>
+                    <DialogFooter>
+                        <Button
+                            type="submit"
+                            disabled={mutation.isPending}>
+                            {mutation.isPending && <Spinner data-icon="inline-start" />} Ok
+                        </Button>
+                        <DialogClose asChild>
+                            <Button variant="outline">Cancel</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
     );

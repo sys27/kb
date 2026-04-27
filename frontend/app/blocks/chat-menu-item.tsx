@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query';
 import { Ellipsis, MessageCircle, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
@@ -18,12 +19,21 @@ import {
     DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
 import { SidebarMenuAction, SidebarMenuButton, SidebarMenuItem } from '~/components/ui/sidebar';
-import type { Chat } from '~/services/chats';
+import { Spinner } from '~/components/ui/spinner';
+import { chatsOptions, deleteChat, type Chat } from '~/services/chats';
 import ChatEditDialog from './chat-edit-dialog';
 
 export default function ChatMenuItem({ chat }: { chat: Chat }) {
     let [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     let [openEditDialog, setOpenEditDialog] = useState(false);
+    let deleteMutation = useMutation({
+        mutationFn: () => deleteChat(chat.id),
+        onSuccess: () => {
+            setOpenDeleteDialog(false);
+        },
+        onSettled: (data, error, variables, onMutateResult, context) =>
+            context.client.invalidateQueries(chatsOptions),
+    });
 
     return (
         <SidebarMenuItem
@@ -72,7 +82,16 @@ export default function ChatMenuItem({ chat }: { chat: Chat }) {
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogAction variant="destructive">Delete</AlertDialogAction>
+                            <AlertDialogAction
+                                variant="destructive"
+                                onClick={e => {
+                                    e.preventDefault();
+                                    deleteMutation.mutate();
+                                }}
+                                disabled={deleteMutation.isPending}>
+                                {deleteMutation.isPending && <Spinner data-icon="inline-start" />}
+                                Delete
+                            </AlertDialogAction>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                         </AlertDialogFooter>
                     </AlertDialogContent>
