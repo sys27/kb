@@ -1,6 +1,7 @@
 services:
   kb:
     image: kb
+    build: .
     container_name: kb
     ports:
       - "8080:80"
@@ -14,5 +15,3 @@ services:
       - Ingestion__Enabled=
       - Summarization__Enabled=
       - WebSearch__BaseUrl=
-    volumes:
-      - ./data:/data

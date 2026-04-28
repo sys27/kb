@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { Ellipsis, Folder, Pencil, Trash2 } from 'lucide-react';
+import { Ellipsis, FileText, Folder, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import {
@@ -15,7 +15,9 @@ import {
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
 import {
@@ -29,6 +31,7 @@ import type { Chat } from '~/services/chats';
 import { deleteProject, projectsOptions, type Project } from '~/services/projects';
 import ChatMenuItem from './chat-menu-item';
 import ProjectEditDialog from './project-edit-dialog';
+import UploadDocumentDialog from './upload-document-dialog';
 
 interface ProjectMenuItemProps {
     project: Project;
@@ -36,6 +39,7 @@ interface ProjectMenuItemProps {
 }
 
 export default function ProjectMenuItem({ project, chats }: ProjectMenuItemProps) {
+    let [openUploadDialog, setOpenUploadDialog] = useState(false);
     let [openEditDialog, setOpenEditDialog] = useState(false);
     let [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     let deleteMutation = useMutation({
@@ -63,18 +67,33 @@ export default function ProjectMenuItem({ project, chats }: ProjectMenuItemProps
                         <Ellipsis />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                        <DropdownMenuItem onSelect={() => setOpenEditDialog(true)}>
-                            <Pencil />
-                            Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            variant="destructive"
-                            onSelect={() => setOpenDeleteDialog(true)}>
-                            <Trash2 />
-                            Delete
-                        </DropdownMenuItem>
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem onSelect={() => setOpenUploadDialog(true)}>
+                                <FileText />
+                                Upload File
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuGroup>
+                            <DropdownMenuItem onSelect={() => setOpenEditDialog(true)}>
+                                <Pencil />
+                                Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                variant="destructive"
+                                onSelect={() => setOpenDeleteDialog(true)}>
+                                <Trash2 />
+                                Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>
+
+                <UploadDocumentDialog
+                    projectId={project.id}
+                    open={openUploadDialog}
+                    onOpenChange={setOpenUploadDialog}
+                />
 
                 <ProjectEditDialog
                     project={project}

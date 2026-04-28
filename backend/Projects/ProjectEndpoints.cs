@@ -170,6 +170,50 @@ public static class ProjectEndpoints
             .WithName("GetProjectDocuments")
             .WithSummary("Get all documents for a project");
 
+        group.MapPost("/upload", async (
+                int projectId,
+                ILoggerFactory loggerFactory,
+                KbDbContext context,
+                IOptions<IngestionOptions> ingestionOptions,
+                IFormFile? file,
+                CancellationToken cancellationToken) =>
+            {
+                var logger = loggerFactory.CreateLogger("DocumentUpload");
+                if (file is null || file.Length == 0)
+                {
+                    logger.LogWarning("File is empty");
+                    return Results.BadRequest();
+                }
+
+                var project = await context.Projects
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == projectId, cancellationToken);
+
+                if (project is null)
+                {
+                    logger.LogWarning("Project not found: {projectId}", projectId);
+                    return Results.NotFound();
+                }
+
+                var filePath = Path.Combine(ingestionOptions.Value.Path, project.GetDirectoryName(), file.FileName);
+                if (File.Exists(filePath))
+                {
+                    logger.LogWarning("File already exists: {filePath}", filePath);
+                    return Results.BadRequest();
+                }
+
+                await using var stream = File.Open(filePath, FileMode.CreateNew, FileAccess.Write);
+                await file.CopyToAsync(stream, cancellationToken);
+
+                return Results.Ok();
+            })
+            .DisableAntiforgery()
+            .Produces(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName("UploadProjectDocument")
+            .WithSummary("Upload a new document for a project");
+
         return builder;
     }
 }

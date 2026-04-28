@@ -104,6 +104,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<IValidateOptions<IngestionOptions>, IngestionOptions>();
         services.Configure<IngestionOptions>(configuration.GetSection(IngestionOptions.Section));
+        services.AddHostedService<DocumentDiscoveryBackgroundService>();
         services.AddHostedService<IngestionBackgroundService>();
 
         services.AddSingleton<TextChunker>();

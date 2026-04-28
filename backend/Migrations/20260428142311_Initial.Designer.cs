@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(KbDbContext))]
-    [Migration("20260423181151_Initial")]
+    [Migration("20260428142311_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -173,7 +173,7 @@ namespace Backend.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("BLOB");
 
-                    b.Property<DateTime>("LastModifiedAt")
+                    b.Property<DateTime?>("LastModifiedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
@@ -183,6 +183,12 @@ namespace Backend.Migrations
 
                     b.Property<int>("ProjectId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Pending");
 
                     b.HasKey("Id")
                         .HasName("PK_Documents");

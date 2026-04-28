@@ -3,7 +3,8 @@ import { queryOptions } from "@tanstack/react-query";
 export interface ProjectDocument {
     id: number;
     name: string;
-    lastModifiedAt: string;
+    lastModifiedAt: string | null;
+    status: "Pending" | "Ingested" | "Failed";
 }
 
 export function projectDocumentsOptions(projectId: number) {
@@ -20,4 +21,17 @@ export async function getProjectDocuments(projectId: number): Promise<ProjectDoc
     }
 
     return response.json();
+}
+
+export async function uploadDocument(projectId: number, file: File): Promise<void> {
+    let formData = new FormData();
+    formData.append('file', file);
+
+    let response = await fetch(`/api/projects/${projectId}/documents/upload`, {
+        method: 'POST',
+        body: formData,
+    });
+    if (!response.ok) {
+        throw new Error("Failed to upload the document");
+    }
 }

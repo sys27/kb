@@ -54,8 +54,9 @@ namespace Backend.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    LastModifiedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    LastModifiedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Hash = table.Column<byte[]>(type: "BLOB", maxLength: 32, nullable: false),
+                    Status = table.Column<string>(type: "TEXT", nullable: false, defaultValue: "Pending"),
                     ProjectId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Backend.Ingestion.TypeConfigurations;
 
@@ -19,6 +20,11 @@ public class DocumentTypeConfiguration : IEntityTypeConfiguration<Document>
         builder.Property(e => e.Hash)
             .IsRequired()
             .HasMaxLength(32);
+
+        builder.Property(e => e.Status)
+            .IsRequired()
+            .HasDefaultValue(DocumentStatus.Pending)
+            .HasConversion(new EnumToStringConverter<DocumentStatus>());
 
         builder.HasIndex(e => e.ProjectId, "IX_Documents_ProjectId");
 
