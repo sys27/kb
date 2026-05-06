@@ -1,19 +1,29 @@
+using System.Runtime.CompilerServices;
 using System.Text;
 using Backend.Chats;
 using Backend.Vectors;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.VectorData;
 
 namespace Backend.Messages.Pipelines;
 
 public class GatherKnowledge : IConversationPipelineStep
 {
+    private readonly ILogger<GatherKnowledge> logger;
     private readonly KbDbContext dbContext;
     private readonly VectorStoreCollection<int, Embeddings> vectorCollection;
+    private readonly RerankClient rerankClient;
 
-    public GatherKnowledge(KbDbContext dbContext, VectorStoreCollection<int, Embeddings> vectorCollection)
+    public GatherKnowledge(
+        ILogger<GatherKnowledge> logger,
+        KbDbContext dbContext,
+        VectorStoreCollection<int, Embeddings> vectorCollection,
+        RerankClient rerankClient)
     {
+        this.logger = logger;
         this.dbContext = dbContext;
         this.vectorCollection = vectorCollection;
+        this.rerankClient = rerankClient;
     }
 
     public async Task ExecuteAsync(ConversationPipelineContext context, CancellationToken cancellationToken = default)
@@ -194,31 +204,72 @@ public class GatherKnowledge : IConversationPipelineStep
         StringBuilder combinedMessage,
         CancellationToken cancellationToken)
     {
-        var vectorOptions = new VectorSearchOptions<Embeddings>
-        {
-            ScoreThreshold = 0.5,
-            Filter = e => e.ProjectId == chat.ProjectId &&
-                          e.SourceType == (int)EmbeddingSourceType.DocumentChunk,
-        };
-        var vectorSearchResults = await vectorCollection
-            .SearchAsync(requestText, 3, vectorOptions, cancellationToken)
+        var vectorSearchResults = await VectorSearch(chat.ProjectId, requestText, cancellationToken)
+            .Concat(BestMatching25Search(chat.ProjectId, requestText))
+            .DistinctBy(x => x.Id)
+            .Select(x => x.Content)
             .ToListAsync(cancellationToken);
 
         if (vectorSearchResults.Count > 0)
         {
             combinedMessage.AppendLine("### Related Documents (external knowledge, may be partial or noisy)");
 
-            for (var i = 0; i < vectorSearchResults.Count; i++)
-            {
-                var result = vectorSearchResults[i];
-                var summary = await dbContext.GetEmbeddingsContent(result.Record, cancellationToken);
+            var reranked = rerankClient.Rerank(requestText, vectorSearchResults, 5, cancellationToken);
 
+            var i = 0;
+            await foreach (var document in reranked)
+            {
                 combinedMessage
                     .Append('[')
                     .Append(i + 1)
                     .Append("] ")
-                    .AppendLine(summary);
+                    .AppendLine(document);
+
+                i++;
             }
         }
     }
+
+    private async IAsyncEnumerable<DocumentSearchResult> VectorSearch(
+        int? projectId,
+        string query,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var vectorOptions = new VectorSearchOptions<Embeddings>
+        {
+            ScoreThreshold = 0.5,
+            Filter = e => e.ProjectId == projectId &&
+                          e.SourceType == (int)EmbeddingSourceType.DocumentChunk,
+        };
+        var vectorSearchResults = vectorCollection.SearchAsync(query, 10, vectorOptions, cancellationToken);
+
+        await foreach (var result in vectorSearchResults)
+        {
+            var summary = await dbContext.GetEmbeddingsContent(result.Record, cancellationToken);
+            if (summary is null)
+            {
+                logger.LogWarning("No content found for embeddings record {RecordId}", result.Record.Id);
+                continue;
+            }
+
+            yield return new DocumentSearchResult(result.Record.Id, summary);
+        }
+    }
+
+    private IAsyncEnumerable<DocumentSearchResult> BestMatching25Search(int? projectId, string query)
+        => dbContext.Database
+            .SqlQuery<DocumentSearchResult>(
+                $"""
+                 SELECT FTI.rowid AS Id, FTI.Content AS Content
+                 FROM FullTextIndex AS FTI
+                          INNER JOIN DocumentChunks AS DC ON DC.Id = FTI.rowid
+                          INNER JOIN Documents AS D ON D.Id = DC.DocumentId
+                 WHERE ({projectId} IS NULL AND D.ProjectId = {projectId})
+                   AND FullTextIndex MATCH {query}
+                 ORDER BY bm25(FullTextIndex)
+                 LIMIT 10
+                 """)
+            .AsAsyncEnumerable();
+
+    private record DocumentSearchResult(int Id, string Content);
 }

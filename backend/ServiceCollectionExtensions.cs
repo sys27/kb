@@ -1,6 +1,7 @@
 using System.ClientModel;
 using Backend.Chats;
 using Backend.Ingestion;
+using Backend.Messages.Pipelines;
 using Backend.Vectors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -86,6 +87,15 @@ public static class ServiceCollectionExtensions
 
             return client.GetEmbeddingClient(llmOptions.Value.EmbeddingModel).AsIEmbeddingGenerator();
         });
+
+        services
+            .AddHttpClient<RerankClient>((provider, client) =>
+            {
+                var options = provider.GetRequiredService<IOptions<LlmOptions>>();
+
+                client.BaseAddress = new Uri(options.Value.Endpoint);
+            })
+            .AddStandardResilienceHandler();
 
         services.AddSingleton<Tokenizer>(provider =>
         {
