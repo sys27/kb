@@ -14,6 +14,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from '~/components/ui/field
 import { Input } from '~/components/ui/input';
 import { Spinner } from '~/components/ui/spinner';
 import { chatsOptions, updateChat, type Chat } from '~/services/chats';
+import { projectChatsOptions } from '~/services/project-chats';
 
 interface ChatEditDialogProps {
     chat: Chat;
@@ -74,8 +75,12 @@ export default function ChatEditDialog({ chat, open, onOpenChange }: ChatEditDia
                 );
             }
         },
-        onSettled: (data, error, variables, onMutateResult, context) =>
-            context.client.invalidateQueries(chatsOptions),
+        onSettled: (data, error, variables, onMutateResult, context) => {
+            context.client.invalidateQueries(chatsOptions);
+
+            if (data?.projectId)
+                context.client.invalidateQueries(projectChatsOptions(data.projectId));
+        },
     });
 
     return (

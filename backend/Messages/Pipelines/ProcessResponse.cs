@@ -1,51 +1,54 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Options;
 
 namespace Backend.Messages.Pipelines;
 
 public class ProcessResponse : IConversationPipelineStep
 {
-    private readonly HttpResponse httpResponse;
+    private readonly HttpContext httpContext;
+    private readonly JsonOptions jsonOptions;
 
-    public ProcessResponse(IHttpContextAccessor httpContextAccessor)
+    public ProcessResponse(IHttpContextAccessor httpContextAccessor, IOptions<JsonOptions> jsonOptions)
     {
-        if (httpContextAccessor.HttpContext is null)
-            throw new ArgumentNullException(nameof(httpContextAccessor));
+        this.httpContext = httpContextAccessor.HttpContext ??
+                           throw new ArgumentNullException(nameof(httpContextAccessor));
 
-        this.httpResponse = httpContextAccessor.HttpContext.Response;
+        this.jsonOptions = jsonOptions.Value;
     }
 
     public async Task ExecuteAsync(ConversationPipelineContext context, CancellationToken cancellationToken = default)
     {
-        await WriteSseHeaders(httpResponse, cancellationToken);
+        await WriteSseHeaders(cancellationToken);
 
         var streamingResponse = context.Get<IAsyncEnumerable<ChatResponseUpdate>>("streamingResponse");
 
         var reasoningResponse = new StringBuilder();
         var toolResponse = new StringBuilder();
         var finalResponse = new StringBuilder();
-        await foreach (var chatResponse in streamingResponse)
+        await foreach (var chatResponse in streamingResponse.WithCancellation(cancellationToken))
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
             foreach (var content in chatResponse.Contents)
             {
                 if (content is TextReasoningContent textReasoning)
                 {
                     reasoningResponse.Append(textReasoning.Text);
-                    await WriteSse(httpResponse, textReasoning.Text, cancellationToken);
+                    await WriteReasoning(textReasoning.Text, cancellationToken);
                 }
                 else if (content is TextContent text)
                 {
                     finalResponse.Append(text.Text);
-                    await WriteSse(httpResponse, text.Text, cancellationToken);
+                    await WriteText(text.Text, cancellationToken);
                 }
                 else if (content is FunctionCallContent functionCall)
                 {
                     var toolCall = $"Calling tool: {functionCall.Name}({functionCall.Arguments})";
                     toolResponse.AppendLine(toolCall);
-                    await WriteSse(httpResponse, toolCall, cancellationToken);
+                    // TODO: write tool call to SSE
+                    // await WriteSse(toolCall, cancellationToken);
                 }
                 else
                 {
@@ -59,19 +62,40 @@ public class ProcessResponse : IConversationPipelineStep
         context.Set("finalResponse", finalResponse.ToString());
     }
 
-    private static async Task WriteSseHeaders(HttpResponse response, CancellationToken cancellationToken)
+    private async Task WriteSseHeaders(CancellationToken cancellationToken)
     {
-        response.Headers.ContentType = "text/event-stream";
-        response.Headers.CacheControl = "no-cache";
-        response.Headers.Connection = "keep-alive";
-        await response.Body.FlushAsync(cancellationToken);
+        httpContext.Response.Headers.ContentType = "text/event-stream";
+        httpContext.Response.Headers.CacheControl = "no-cache,no-store";
+        httpContext.Response.Headers.Pragma = "no-cache";
+        httpContext.Response.Headers.Connection = "keep-alive";
+        httpContext.Response.Headers.ContentEncoding = "identity";
+
+        await httpContext.Response.Body.FlushAsync(cancellationToken);
     }
 
-    private static async Task WriteSse(HttpResponse response, string text, CancellationToken cancellationToken)
+    private async Task WriteSse<T>(T message, CancellationToken cancellationToken)
     {
-        await response.WriteAsync("data: ", cancellationToken);
-        await response.WriteAsync(text, cancellationToken);
-        await response.WriteAsync("\n\n", cancellationToken);
-        await response.Body.FlushAsync(cancellationToken);
+        var json = JsonSerializer.Serialize(message, jsonOptions.SerializerOptions);
+
+        await httpContext.Response.WriteAsync("data: ", cancellationToken);
+        await httpContext.Response.WriteAsync(json, cancellationToken);
+        await httpContext.Response.WriteAsync("\n\n", cancellationToken);
+        await httpContext.Response.Body.FlushAsync(cancellationToken);
     }
+
+    private async Task WriteReasoning(string text, CancellationToken cancellationToken)
+    {
+        var message = new MessageSse(nameof(MessageRole.Assistant), nameof(MessageKind.Reasoning), text);
+
+        await WriteSse(message, cancellationToken);
+    }
+
+    private async Task WriteText(string text, CancellationToken cancellationToken)
+    {
+        var message = new MessageSse(nameof(MessageRole.Assistant), nameof(MessageKind.Text), text);
+
+        await WriteSse(message, cancellationToken);
+    }
+
+    private readonly record struct MessageSse(string Role, string Kind, string Text);
 }

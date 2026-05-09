@@ -1,26 +1,32 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions } from '@tanstack/react-query';
+import z from 'zod';
 
-export interface ProjectDocument {
-    id: number;
-    name: string;
-    lastModifiedAt: string | null;
-    status: "Pending" | "Ingested" | "Failed";
-}
+const ProjectDocumentSchema = z.object({
+    id: z.number(),
+    name: z.string(),
+    lastModifiedAt: z.coerce.date().nullable(),
+    status: z.enum(['Pending', 'Ingested', 'Failed']),
+});
+
+export type ProjectDocument = z.infer<typeof ProjectDocumentSchema>;
 
 export function projectDocumentsOptions(projectId: number) {
     return queryOptions({
-        queryKey: ["project", projectId, "documents"],
+        queryKey: ['project', projectId, 'documents'],
         queryFn: () => getProjectDocuments(projectId),
+        staleTime: Infinity,
     });
 }
 
 export async function getProjectDocuments(projectId: number): Promise<ProjectDocument[]> {
     let response = await fetch(`/api/projects/${projectId}/documents`);
     if (!response.ok) {
-        throw new Error("Failed to fetch project documents");
+        throw new Error('Failed to fetch project documents');
     }
 
-    return response.json();
+    let json = await response.json();
+
+    return z.array(ProjectDocumentSchema).parse(json);
 }
 
 export async function uploadDocument(projectId: number, file: File): Promise<void> {
@@ -32,6 +38,6 @@ export async function uploadDocument(projectId: number, file: File): Promise<voi
         body: formData,
     });
     if (!response.ok) {
-        throw new Error("Failed to upload the document");
+        throw new Error('Failed to upload the document');
     }
 }

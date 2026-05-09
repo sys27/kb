@@ -42,7 +42,7 @@ export default function MessageItem({ message }: { message: Message }) {
                             <Copy />
                         </Button>
                         <span className="text-muted-foreground">
-                            {message.timestamp.toString()}
+                            {message.timestamp.toLocaleString()}
                         </span>
                     </CardFooter>
                 </CollapsibleContent>

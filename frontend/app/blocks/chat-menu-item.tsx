@@ -21,6 +21,7 @@ import {
 import { SidebarMenuAction, SidebarMenuButton, SidebarMenuItem } from '~/components/ui/sidebar';
 import { Spinner } from '~/components/ui/spinner';
 import { chatsOptions, deleteChat, type Chat } from '~/services/chats';
+import { projectChatsOptions } from '~/services/project-chats';
 import ChatEditDialog from './chat-edit-dialog';
 
 export default function ChatMenuItem({ chat }: { chat: Chat }) {
@@ -31,8 +32,12 @@ export default function ChatMenuItem({ chat }: { chat: Chat }) {
         onSuccess: () => {
             setOpenDeleteDialog(false);
         },
-        onSettled: (data, error, variables, onMutateResult, context) =>
-            context.client.invalidateQueries(chatsOptions),
+        onSettled: (data, error, variables, onMutateResult, context) => {
+            context.client.invalidateQueries(chatsOptions);
+
+            if (chat?.projectId)
+                context.client.invalidateQueries(projectChatsOptions(chat.projectId));
+        },
     });
 
     return (

@@ -41,7 +41,7 @@ export default function ProjectDocumentsList({ projectId }: ProjectDocumentsList
                         <ItemContent>
                             <ItemDescription>
                                 {document.lastModifiedAt
-                                    ? new Date(document.lastModifiedAt).toLocaleDateString()
+                                    ? document.lastModifiedAt.toLocaleString()
                                     : null}
                             </ItemDescription>
                         </ItemContent>

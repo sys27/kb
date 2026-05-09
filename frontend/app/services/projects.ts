@@ -1,60 +1,68 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions } from '@tanstack/react-query';
+import z from 'zod';
 
-export interface Project {
-    get id(): number;
-    get name(): string;
-}
+const ProjectSchema = z.object({
+    id: z.number(),
+    name: z.string(),
+});
+
+export type Project = z.infer<typeof ProjectSchema>;
 
 export const projectsOptions = queryOptions({
-    queryKey: ["projects"],
+    queryKey: ['projects'],
     queryFn: getProjects,
     staleTime: Infinity,
 });
 
 export async function getProjects(): Promise<Project[]> {
-    let response = await fetch("/api/projects");
+    let response = await fetch('/api/projects');
     if (!response.ok) {
-        throw new Error("Failed to fetch projects");
+        throw new Error('Failed to fetch projects');
     }
 
-    return response.json();
+    let json = await response.json();
+
+    return z.array(ProjectSchema).parse(json);
 }
 
 export async function createProject(name: string): Promise<Project> {
-    let response = await fetch("/api/projects", {
-        method: "POST",
+    let response = await fetch('/api/projects', {
+        method: 'POST',
         headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name }),
     });
     if (!response.ok) {
-        throw new Error("Failed to create project");
+        throw new Error('Failed to create project');
     }
 
-    return response.json();
+    let json = await response.json();
+    return ProjectSchema.parse(json);
 }
 
 export async function updateProject(id: number, name: string): Promise<Project> {
     let response = await fetch(`/api/projects/${id}`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name }),
     });
     if (!response.ok) {
-        throw new Error("Failed to update project");
+        throw new Error('Failed to update project');
     }
 
-    return response.json();
+    let json = await response.json();
+
+    return ProjectSchema.parse(json);
 }
 
 export async function deleteProject(id: number): Promise<void> {
     let response = await fetch(`/api/projects/${id}`, {
-        method: "DELETE",
+        method: 'DELETE',
     });
     if (!response.ok) {
-        throw new Error("Failed to delete project");
+        throw new Error('Failed to delete project');
     }
 }

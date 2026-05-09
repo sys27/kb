@@ -29,8 +29,6 @@ public class GatherKnowledge : IConversationPipelineStep
     public async Task ExecuteAsync(ConversationPipelineContext context, CancellationToken cancellationToken = default)
     {
         // TODO: use LLM to generate query?
-        // TODO: deduplicate?
-        // TODO: ranking?
         var chat = context.Get<Chat>("chat");
         var requestText = context.Get<string>("requestText");
         var combinedMessage = new StringBuilder();
@@ -210,24 +208,24 @@ public class GatherKnowledge : IConversationPipelineStep
             .Select(x => x.Content)
             .ToListAsync(cancellationToken);
 
-        if (vectorSearchResults.Count > 0)
-        {
-            combinedMessage.AppendLine("### Related Documents (external knowledge, may be partial or noisy)");
+        if (vectorSearchResults.Count <= 0)
+            return;
 
-            var reranked = rerankClient.Rerank(requestText, vectorSearchResults, 5, cancellationToken);
+        var reranked = await rerankClient
+            .Rerank(requestText, vectorSearchResults, 5, cancellationToken)
+            .ToArrayAsync(cancellationToken);
 
-            var i = 0;
-            await foreach (var document in reranked)
-            {
-                combinedMessage
-                    .Append('[')
-                    .Append(i + 1)
-                    .Append("] ")
-                    .AppendLine(document);
+        if (reranked.Length <= 0)
+            return;
 
-                i++;
-            }
-        }
+        combinedMessage.AppendLine("### Related Documents (external knowledge, may be partial or noisy)");
+
+        for (var i = 0; i < reranked.Length; i++)
+            combinedMessage
+                .Append('[')
+                .Append(i + 1)
+                .Append("] ")
+                .AppendLine(reranked[i]);
     }
 
     private async IAsyncEnumerable<DocumentSearchResult> VectorSearch(
@@ -256,20 +254,51 @@ public class GatherKnowledge : IConversationPipelineStep
         }
     }
 
+    private static string EscapeFtsQuery(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return "\"\"";
+
+        var sanitized = query
+            .Replace("\"", " ")
+            .Replace("'", " ")
+            .Replace("*", " ")
+            .Replace("(", " ")
+            .Replace(")", " ")
+            .Replace("^", " ")
+            .Replace("-", " ")
+            .Replace("+", " ")
+            .Replace(":", " ")
+            .Trim();
+
+        if (string.IsNullOrWhiteSpace(sanitized))
+            return "\"\"";
+
+        var tokens = sanitized
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(t => $"\"{t}\"");
+
+        return string.Join(" ", tokens);
+    }
+
     private IAsyncEnumerable<DocumentSearchResult> BestMatching25Search(int? projectId, string query)
-        => dbContext.Database
+    {
+        var escapedQuery = EscapeFtsQuery(query);
+
+        return dbContext.Database
             .SqlQuery<DocumentSearchResult>(
                 $"""
                  SELECT FTI.rowid AS Id, FTI.Content AS Content
                  FROM FullTextIndex AS FTI
                           INNER JOIN DocumentChunks AS DC ON DC.Id = FTI.rowid
                           INNER JOIN Documents AS D ON D.Id = DC.DocumentId
-                 WHERE ({projectId} IS NULL AND D.ProjectId = {projectId})
-                   AND FullTextIndex MATCH {query}
+                 WHERE ({projectId} IS NULL OR D.ProjectId = {projectId})
+                   AND FullTextIndex MATCH {escapedQuery}
                  ORDER BY bm25(FullTextIndex)
                  LIMIT 10
                  """)
             .AsAsyncEnumerable();
+    }
 
     private record DocumentSearchResult(int Id, string Content);
 }

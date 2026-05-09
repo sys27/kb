@@ -26,9 +26,7 @@ export default function ProjectChatsList({ projectId }: ProjectChatsListProps) {
                         </ItemContent>
                         <ItemContent>
                             <ItemDescription>
-                                {chat.lastMessageAt
-                                    ? new Date(chat.lastMessageAt).toLocaleDateString()
-                                    : null}
+                                {chat.lastMessageAt ? chat.lastMessageAt.toLocaleString() : null}
                             </ItemDescription>
                         </ItemContent>
                     </Item>

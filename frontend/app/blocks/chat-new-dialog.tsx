@@ -22,6 +22,7 @@ import {
 } from '~/components/ui/select';
 import { Spinner } from '~/components/ui/spinner';
 import { chatsOptions, createChat, type Chat } from '~/services/chats';
+import { projectChatsOptions } from '~/services/project-chats';
 import type { Project } from '~/services/projects';
 
 interface ChatNewDialogProps {
@@ -85,8 +86,12 @@ export default function ChatNewDialog({ projects, open, onOpenChange }: ChatNewD
                 );
             }
         },
-        onSettled: (data, error, variables, onMutateResult, context) =>
-            context.client.invalidateQueries(chatsOptions),
+        onSettled: (data, error, variables, onMutateResult, context) => {
+            context.client.invalidateQueries(chatsOptions);
+
+            if (data?.projectId)
+                context.client.invalidateQueries(projectChatsOptions(data.projectId));
+        },
     });
 
     return (
