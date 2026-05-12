@@ -24,20 +24,11 @@ public class SendRequest : IConversationPipelineStep
         var requestText = context.Get<string>("requestText");
         var enableWebSearch = context.Get<bool>("enableWebSearch");
 
-        chat.AddMessage(Message.ForUser(chat.Id, requestText));
+        chat.AddMessage(Message.ForUserRequest(chat.Id, requestText));
 
         var chatMessages = chat.Messages
-            .Where(x => x.Kind != MessageKind.Reasoning)
-            .Select(x => new ChatMessage(
-                x.Role switch
-                {
-                    MessageRole.System => ChatRole.System,
-                    MessageRole.User => ChatRole.User,
-                    MessageRole.Assistant => ChatRole.Assistant,
-                    MessageRole.Tool => ChatRole.Tool,
-                    _ => throw new ArgumentOutOfRangeException(),
-                },
-                x.Text));
+            .Where(x => x.MessageTypeId != MessageType.AssistantReasoningId)
+            .Select(x => x.ToChatMessage());
 
         var chatOptions = new ChatOptions
         {

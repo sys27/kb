@@ -30,6 +30,7 @@ import { Spinner } from '~/components/ui/spinner';
 import {
     getMessages,
     messagesOptions,
+    MessageType,
     sendMessage,
     type Message,
     type MessageSse,
@@ -62,22 +63,15 @@ export default function Chat({ params }: Route.ComponentProps) {
     let mutation = useMutation({
         mutationFn: async (form: FormType) => {
             let request = sendMessage(chatId, form.message);
-            let lastChunkKey = '';
             let lastChunk: MessageSse | null = null;
 
             for await (let chunk of request) {
-                let chunkKey = `${chunk.role}-${chunk.kind}`;
-
                 queryClient.setQueryData<Message[]>(messageOptionsForChat.queryKey, (prev = []) => {
                     let newPrev = [...prev];
 
-                    if (lastChunk && chunkKey === lastChunkKey) {
+                    if (lastChunk && chunk.messageTypeId === lastChunk.messageTypeId) {
                         let lastMsg = newPrev[newPrev.length - 1];
-                        if (
-                            lastMsg &&
-                            lastMsg.role === lastChunk.role &&
-                            lastMsg.kind === lastChunk.kind
-                        ) {
+                        if (lastMsg && lastMsg.messageTypeId === lastChunk.messageTypeId) {
                             newPrev[newPrev.length - 1] = {
                                 ...lastMsg,
                                 text: lastMsg.text + chunk.text,
@@ -91,7 +85,6 @@ export default function Chat({ params }: Route.ComponentProps) {
                         });
                     }
 
-                    lastChunkKey = chunkKey;
                     lastChunk = chunk;
 
                     return newPrev;
@@ -105,8 +98,7 @@ export default function Chat({ params }: Route.ComponentProps) {
                 ...prev,
                 {
                     id: Date.now(),
-                    role: 'User',
-                    kind: 'Text',
+                    messageTypeId: MessageType.userRequestId,
                     text: form.message,
                     timestamp: new Date(),
                 },
@@ -120,7 +112,7 @@ export default function Chat({ params }: Route.ComponentProps) {
                 queryClient.setQueryData<Message[]>(messageOptionsForChat.queryKey, (prev = []) => {
                     let merged = serverMessages.map(srv => {
                         let match = prev.find(
-                            p => p.role === srv.role && p.kind === srv.kind && p.text === srv.text,
+                            p => p.messageTypeId === srv.messageTypeId && p.text === srv.text,
                         );
 
                         if (match) {

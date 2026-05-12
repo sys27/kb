@@ -10,6 +10,10 @@ public class ConversationPipeline
     public async Task Run(ConversationPipelineContext context, CancellationToken cancellationToken = default)
     {
         foreach (var step in steps)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
             await step.ExecuteAsync(context, cancellationToken);
+        }
     }
 }

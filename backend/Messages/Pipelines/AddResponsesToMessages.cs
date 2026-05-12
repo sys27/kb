@@ -20,7 +20,10 @@ public class AddResponsesToMessages : IConversationPipelineStep
             chat.AddMessage(Message.ForReasoning(chat.Id, reasoningResponse));
 
         if (toolResponse.Length > 0)
-            chat.AddMessage(Message.ForTool(chat.Id, toolResponse));
+        {
+            // TODO: Add tool message
+            // chat.AddMessage(Message.ForTool(chat.Id, toolResponse));
+        }
 
         chat.AddMessage(Message.ForAssistant(chat.Id, finalResponse));
 

@@ -231,13 +231,8 @@ namespace Backend.Migrations
                     b.Property<int>("ChatId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Kind")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("MessageTypeId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Text")
                         .IsRequired()
@@ -251,7 +246,63 @@ namespace Backend.Migrations
 
                     b.HasIndex(new[] { "ChatId" }, "IX_Messages_ChatId");
 
+                    b.HasIndex(new[] { "MessageTypeId" }, "IX_Messages_MessageTypeId");
+
                     b.ToTable("Messages", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Messages.MessageType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id")
+                        .HasName("PK_MessageTypes");
+
+                    b.ToTable("MessageTypes", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Kind = "Text",
+                            Role = "System"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Kind = "Reasoning",
+                            Role = "Assistant"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Kind = "Answer",
+                            Role = "Assistant"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Kind = "Context",
+                            Role = "User"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Kind = "Request",
+                            Role = "User"
+                        });
                 });
 
             modelBuilder.Entity("Backend.Projects.Project", b =>
@@ -367,9 +418,19 @@ namespace Backend.Migrations
                         .WithMany("Messages")
                         .HasForeignKey("ChatId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_Messages_Chats_ChatId");
+
+                    b.HasOne("Backend.Messages.MessageType", "MessageType")
+                        .WithMany("Messages")
+                        .HasForeignKey("MessageTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_Messages_MessageTypes_MessageTypeId");
 
                     b.Navigation("Chat");
+
+                    b.Navigation("MessageType");
                 });
 
             modelBuilder.Entity("Backend.Chats.Chat", b =>
@@ -388,6 +449,11 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Ingestion.Document", b =>
                 {
                     b.Navigation("DocumentChunks");
+                });
+
+            modelBuilder.Entity("Backend.Messages.MessageType", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("Backend.Projects.Project", b =>

@@ -85,17 +85,17 @@ public class ProcessResponse : IConversationPipelineStep
 
     private async Task WriteReasoning(string text, CancellationToken cancellationToken)
     {
-        var message = new MessageSse(nameof(MessageRole.Assistant), nameof(MessageKind.Reasoning), text);
+        var message = new MessageSse(MessageType.AssistantReasoningId, text);
 
         await WriteSse(message, cancellationToken);
     }
 
     private async Task WriteText(string text, CancellationToken cancellationToken)
     {
-        var message = new MessageSse(nameof(MessageRole.Assistant), nameof(MessageKind.Text), text);
+        var message = new MessageSse(MessageType.AssistantAnswerId, text);
 
         await WriteSse(message, cancellationToken);
     }
 
-    private readonly record struct MessageSse(string Role, string Kind, string Text);
+    private readonly record struct MessageSse(int MessageTypeId, string Text);
 }

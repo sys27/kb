@@ -71,30 +71,33 @@ public class SummarizationBackgroundService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
+            logger.LogInformation("Starting summarization...");
+
             var scope = scopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<KbDbContext>();
             var summaryInactivityWindow = DateTime.UtcNow.Add(-options.SummaryInactivityWindow);
             var chats = await dbContext.Chats
                 .Include(x => x.Messages)
+                .ThenInclude(x => x.MessageType)
                 .Include(x => x.Topics)
                 .Include(x => x.Facts)
                 .Include(x => x.Decisions)
                 .Include(x => x.UserPreferences)
                 .Where(x => x.Messages.Count > 0 &&
-                            ((x.LastSummaryUpdate == null &&
-                              x.LastMessageAt < summaryInactivityWindow) ||
-                             (x.LastSummaryUpdate < summaryInactivityWindow &&
-                              x.LastSummaryUpdate < x.LastMessageAt)))
+                            ((x.LastSummaryUpdate == null && x.LastMessageAt < summaryInactivityWindow) ||
+                             (x.LastSummaryUpdate < summaryInactivityWindow && x.LastSummaryUpdate < x.LastMessageAt)))
                 .AsSplitQuery()
                 .ToListAsync(stoppingToken);
 
             foreach (var chat in chats)
             {
                 var messages = chat.Messages
-                    .Where(x => x.Role is MessageRole.Assistant or MessageRole.User &&
-                                x.Kind is MessageKind.Text)
+                    .Where(x => x.MessageTypeId is
+                        MessageType.AssistantAnswerId or
+                        MessageType.UserContextId or
+                        MessageType.UserRequestId)
                     .OrderBy(x => x.Id)
-                    .Select(x => new Message(x.Role, x.Text, x.Timestamp))
+                    .Select(x => new Message(x.MessageType!.Role, x.Text, x.Timestamp))
                     .ToList();
 
                 var conversation = new Conversation(messages);
@@ -184,6 +187,8 @@ public class SummarizationBackgroundService : BackgroundService
                 }
             }
 
+            logger.LogInformation("Summarization completed.");
+
             await Task.Delay(options.Delay, stoppingToken);
         }
     }
@@ -208,7 +213,7 @@ public class SummarizationBackgroundService : BackgroundService
 
     private record Conversation(List<Message> Messages);
 
-    private record Message(MessageRole Role, string Text, DateTime Timestamp);
+    private record Message(string Role, string Text, DateTime Timestamp);
 
     private record DecisionResponse(string Decision, string Reason);
 

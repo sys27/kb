@@ -1,17 +1,39 @@
 import { queryOptions } from '@tanstack/react-query';
 import z from 'zod';
 
+export const MessageType = {
+    systemId: 1,
+    assistantReasoningId: 2,
+    assistantAnswerId: 3,
+    userContextId: 4,
+    userRequestId: 5,
+} as const;
+
+const MessageTypeRoles: Record<(typeof MessageType)[keyof typeof MessageType], string> = {
+    [MessageType.systemId]: 'System',
+    [MessageType.assistantReasoningId]: 'Assistant',
+    [MessageType.assistantAnswerId]: 'Assistant',
+    [MessageType.userContextId]: 'User',
+    [MessageType.userRequestId]: 'User',
+};
+
+const MessageTypeKinds: Record<(typeof MessageType)[keyof typeof MessageType], string> = {
+    [MessageType.systemId]: '',
+    [MessageType.assistantReasoningId]: 'Reasoning',
+    [MessageType.assistantAnswerId]: '',
+    [MessageType.userContextId]: 'Context',
+    [MessageType.userRequestId]: '',
+};
+
 const MessageSchema = z.object({
     id: z.number(),
-    role: z.enum(['System', 'User', 'Assistant', 'Tool']),
-    kind: z.enum(['Text', 'Reasoning']),
+    messageTypeId: z.enum(MessageType),
     text: z.string(),
     timestamp: z.coerce.date(),
 });
 
 const MessageSchemaSse = z.object({
-    role: z.enum(['System', 'User', 'Assistant', 'Tool']),
-    kind: z.enum(['Text', 'Reasoning']),
+    messageTypeId: z.enum(MessageType),
     text: z.string(),
 });
 
@@ -35,10 +57,11 @@ export async function getMessages(chatId: number): Promise<Message[]> {
 
     let json = await response.json();
 
+    // TODO: server side filtering
     return z
         .array(MessageSchema)
         .parse(json)
-        .filter(x => x.role != 'System');
+        .filter(x => x.messageTypeId != MessageType.systemId);
 }
 
 export async function* sendMessage(chatId: number, message: string) {
@@ -100,4 +123,12 @@ export async function* sendMessage(chatId: number, message: string) {
     } finally {
         reader.releaseLock();
     }
+}
+
+export function getMessageRoleName(message: Message): string {
+    return MessageTypeRoles[message.messageTypeId];
+}
+
+export function getMessageKindName(message: Message): string {
+    return MessageTypeKinds[message.messageTypeId];
 }

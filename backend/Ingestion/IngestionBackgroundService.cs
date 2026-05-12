@@ -42,6 +42,8 @@ public class IngestionBackgroundService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
+            logger.LogInformation("Starting ingestion...");
+
             using var scope = scopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<KbDbContext>();
 
@@ -118,6 +120,8 @@ public class IngestionBackgroundService : BackgroundService
                     }
                 }
             }
+
+            logger.LogInformation("Ingestion completed.");
 
             await Task.Delay(options.IngestionDelay, stoppingToken);
         }

@@ -10,23 +10,35 @@ import {
     CardTitle,
 } from '~/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
-import type { Message } from '~/services/messages';
+import {
+    getMessageKindName,
+    getMessageRoleName,
+    MessageType,
+    type Message,
+} from '~/services/messages';
 
 export default function MessageItem({ message }: { message: Message }) {
     let handleCopy = async () => {
         await navigator.clipboard.writeText(message.text);
     };
+    let isOpen =
+        message.messageTypeId == MessageType.assistantAnswerId ||
+        message.messageTypeId == MessageType.userRequestId;
+    let role = getMessageRoleName(message);
+    let kind = getMessageKindName(message);
 
     return (
-        <Collapsible defaultOpen={message.kind === 'Text'}>
+        <Collapsible defaultOpen={isOpen}>
             <Card>
                 <CardHeader>
                     <CollapsibleTrigger asChild>
                         <div className="flex w-full cursor-pointer items-center justify-between">
-                            <CardTitle>{message.role}</CardTitle>
-                            <CardAction>
-                                <Badge variant="secondary">{message.kind}</Badge>
-                            </CardAction>
+                            <CardTitle>{role}</CardTitle>
+                            {kind && (
+                                <CardAction>
+                                    <Badge variant="secondary">{kind}</Badge>
+                                </CardAction>
+                            )}
                         </div>
                     </CollapsibleTrigger>
                 </CardHeader>

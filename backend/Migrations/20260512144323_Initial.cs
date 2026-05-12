@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace Backend.Migrations
 {
     /// <inheritdoc />
@@ -11,6 +13,20 @@ namespace Backend.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "MessageTypes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Role = table.Column<string>(type: "TEXT", maxLength: 32, nullable: false),
+                    Kind = table.Column<string>(type: "TEXT", maxLength: 32, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MessageTypes", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Projects",
                 columns: table => new
@@ -157,10 +173,9 @@ namespace Backend.Migrations
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Role = table.Column<string>(type: "TEXT", nullable: false),
-                    Kind = table.Column<string>(type: "TEXT", nullable: false),
                     Text = table.Column<string>(type: "TEXT", nullable: false),
                     Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    MessageTypeId = table.Column<int>(type: "INTEGER", nullable: false),
                     ChatId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
@@ -170,6 +185,12 @@ namespace Backend.Migrations
                         name: "FK_Messages_Chats_ChatId",
                         column: x => x.ChatId,
                         principalTable: "Chats",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Messages_MessageTypes_MessageTypeId",
+                        column: x => x.MessageTypeId,
+                        principalTable: "MessageTypes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -200,6 +221,18 @@ namespace Backend.Migrations
                 table: "Chats",
                 columns: new[] { "Id", "LastMessageAt", "LastSummaryUpdate", "Name", "ProjectId", "Summary" },
                 values: new object[] { 2, null, null, "Chat 2", null, null });
+
+            migrationBuilder.InsertData(
+                table: "MessageTypes",
+                columns: new[] { "Id", "Kind", "Role" },
+                values: new object[,]
+                {
+                    { 1, "Text", "System" },
+                    { 2, "Reasoning", "Assistant" },
+                    { 3, "Answer", "Assistant" },
+                    { 4, "Context", "User" },
+                    { 5, "Request", "User" }
+                });
 
             migrationBuilder.InsertData(
                 table: "Projects",
@@ -250,6 +283,11 @@ namespace Backend.Migrations
                 name: "IX_Messages_ChatId",
                 table: "Messages",
                 column: "ChatId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Messages_MessageTypeId",
+                table: "Messages",
+                column: "MessageTypeId");
         }
 
         /// <inheritdoc />
@@ -278,6 +316,9 @@ namespace Backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "Chats");
+
+            migrationBuilder.DropTable(
+                name: "MessageTypes");
 
             migrationBuilder.DropTable(
                 name: "Projects");

@@ -76,7 +76,7 @@ public class GatherKnowledge : IConversationPipelineStep
 
             combinedMessage.AppendLine(requestText);
 
-            context.Set("requestText", combinedMessage.ToString());
+            chat.AddMessage(Message.ForUserContext(chat.Id, combinedMessage.ToString()));
         }
     }
 

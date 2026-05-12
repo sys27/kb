@@ -26,6 +26,7 @@ public class GetChat : IConversationPipelineStep
         var chatId = context.Get<int>("chatId");
         var chat = await dbContext.Chats
             .Include(x => x.Messages)
+            .ThenInclude(x => x.MessageType)
             .FirstOrDefaultAsync(c => c.Id == chatId, cancellationToken);
 
         if (chat is null)

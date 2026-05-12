@@ -43,6 +43,8 @@ public partial class DocumentDiscoveryBackgroundService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
+            logger.LogInformation("Starting document discovery...");
+
             using var scope = scopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<KbDbContext>();
 
@@ -98,6 +100,8 @@ public partial class DocumentDiscoveryBackgroundService : BackgroundService
 
                 await dbContext.SaveChangesAsync(stoppingToken);
             }
+
+            logger.LogInformation("Document discovery completed.");
 
             await Task.Delay(options.DocumentDiscoveryDelay, stoppingToken);
         }

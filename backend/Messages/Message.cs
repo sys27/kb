@@ -1,4 +1,5 @@
 using Backend.Chats;
+using Microsoft.Extensions.AI;
 
 namespace Backend.Messages;
 
@@ -6,13 +7,13 @@ public class Message
 {
     public int Id { get; init; }
 
-    public required MessageRole Role { get; init; }
-
-    public required MessageKind Kind { get; init; }
-
     public required string Text { get; init; }
 
     public DateTime Timestamp { get; init; }
+
+    public required int MessageTypeId { get; init; }
+
+    public MessageType? MessageType { get; init; }
 
     public int ChatId { get; init; }
 
@@ -21,18 +22,25 @@ public class Message
     public static Message ForSystem(int chatId, string text)
         => new Message
         {
-            Role = MessageRole.System,
-            Kind = MessageKind.Text,
+            MessageTypeId = MessageType.SystemId,
             Text = text,
             ChatId = chatId,
             Timestamp = DateTime.UtcNow
         };
 
-    public static Message ForUser(int chatId, string text)
+    public static Message ForUserRequest(int chatId, string text)
         => new Message
         {
-            Role = MessageRole.User,
-            Kind = MessageKind.Text,
+            MessageTypeId = MessageType.UserRequestId,
+            Text = text,
+            ChatId = chatId,
+            Timestamp = DateTime.UtcNow
+        };
+
+    public static Message ForUserContext(int chatId, string text)
+        => new Message
+        {
+            MessageTypeId = MessageType.UserContextId,
             Text = text,
             ChatId = chatId,
             Timestamp = DateTime.UtcNow
@@ -41,8 +49,7 @@ public class Message
     public static Message ForAssistant(int chatId, string text)
         => new Message
         {
-            Role = MessageRole.Assistant,
-            Kind = MessageKind.Text,
+            MessageTypeId = MessageType.AssistantAnswerId,
             Text = text,
             ChatId = chatId,
             Timestamp = DateTime.UtcNow
@@ -51,20 +58,23 @@ public class Message
     public static Message ForReasoning(int chatId, string text)
         => new Message
         {
-            Role = MessageRole.Assistant,
-            Kind = MessageKind.Reasoning,
+            MessageTypeId = MessageType.AssistantReasoningId,
             Text = text,
             ChatId = chatId,
             Timestamp = DateTime.UtcNow
         };
 
-    public static Message ForTool(int chatId, string text)
-        => new Message
+    public ChatMessage ToChatMessage()
+    {
+        var role = MessageTypeId switch
         {
-            Role = MessageRole.Tool,
-            Kind = MessageKind.Text,
-            Text = text,
-            ChatId = chatId,
-            Timestamp = DateTime.UtcNow
+            MessageType.SystemId => ChatRole.System,
+            MessageType.AssistantAnswerId => ChatRole.Assistant,
+            MessageType.UserContextId or MessageType.UserRequestId => ChatRole.User,
+
+            _ => throw new InvalidOperationException(),
         };
+
+        return new ChatMessage(role, Text);
+    }
 }

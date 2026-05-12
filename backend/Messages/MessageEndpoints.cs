@@ -14,6 +14,7 @@ public static class MessageEndpoints
         group.MapGet("", async (int chatId, KbDbContext context, CancellationToken cancellationToken) =>
             {
                 var messages = await context.Messages
+                    .Include(x => x.MessageType)
                     .Where(m => m.ChatId == chatId)
                     .OrderBy(m => m.Id)
                     .AsNoTracking()
