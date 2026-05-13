@@ -15,7 +15,11 @@ public static class ProjectEndpoints
         group
             .MapProjects()
             .MapProjectChats()
-            .MapProjectDocuments();
+            .MapProjectDocuments()
+            .MapProjectTopics()
+            .MapProjectFacts()
+            .MapProjectDecisions()
+            .MapProjectPreferences();
 
         return app;
     }
@@ -213,6 +217,102 @@ public static class ProjectEndpoints
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("UploadProjectDocument")
             .WithSummary("Upload a new document for a project");
+
+        return builder;
+    }
+
+    private static IEndpointRouteBuilder MapProjectTopics(this IEndpointRouteBuilder builder)
+    {
+        var group = builder.MapGroup("/{projectId:int}/topics");
+
+        group.MapGet("", async (int projectId, KbDbContext context, CancellationToken cancellationToken) =>
+            {
+                var topics = await context.ChatTopics
+                    .Include(x => x.Chat)
+                    .Where(x => x.Chat!.ProjectId == projectId)
+                    .OrderBy(x => x.Topic)
+                    .AsNoTracking()
+                    .ToResponse()
+                    .ToListAsync(cancellationToken);
+
+                return Results.Ok(topics);
+            })
+            .Produces<List<ProjectTopicListResponse>>()
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName("GetProjectTopics")
+            .WithSummary("Get all project topics");
+
+        return builder;
+    }
+
+    private static IEndpointRouteBuilder MapProjectFacts(this IEndpointRouteBuilder builder)
+    {
+        var group = builder.MapGroup("/{projectId:int}/facts");
+
+        group.MapGet("", async (int projectId, KbDbContext context, CancellationToken cancellationToken) =>
+            {
+                var facts = await context.ChatFacts
+                    .Include(x => x.Chat)
+                    .Where(x => x.Chat!.ProjectId == projectId)
+                    .OrderBy(x => x.Fact)
+                    .AsNoTracking()
+                    .ToResponse()
+                    .ToListAsync(cancellationToken);
+
+                return Results.Ok(facts);
+            })
+            .Produces<List<ProjectFactListResponse>>()
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName("GetProjectFacts")
+            .WithSummary("Get all project facts");
+
+        return builder;
+    }
+
+    private static IEndpointRouteBuilder MapProjectDecisions(this IEndpointRouteBuilder builder)
+    {
+        var group = builder.MapGroup("/{projectId:int}/decisions");
+
+        group.MapGet("", async (int projectId, KbDbContext context, CancellationToken cancellationToken) =>
+            {
+                var decisions = await context.ChatDecisions
+                    .Include(x => x.Chat)
+                    .Where(x => x.Chat!.ProjectId == projectId)
+                    .OrderBy(x => x.Decision)
+                    .AsNoTracking()
+                    .ToResponse()
+                    .ToListAsync(cancellationToken);
+
+                return Results.Ok(decisions);
+            })
+            .Produces<List<ProjectDecisionListResponse>>()
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName("GetProjectDecisions")
+            .WithSummary("Get all project decisions");
+
+        return builder;
+    }
+
+    private static IEndpointRouteBuilder MapProjectPreferences(this IEndpointRouteBuilder builder)
+    {
+        var group = builder.MapGroup("/{projectId:int}/preferences");
+
+        group.MapGet("", async (int projectId, KbDbContext context, CancellationToken cancellationToken) =>
+            {
+                var preferences = await context.ChatUserPreferences
+                    .Include(x => x.Chat)
+                    .Where(x => x.Chat!.ProjectId == projectId)
+                    .OrderBy(x => x.Preference)
+                    .AsNoTracking()
+                    .ToResponse()
+                    .ToListAsync(cancellationToken);
+
+                return Results.Ok(preferences);
+            })
+            .Produces<List<ProjectPreferenceListResponse>>()
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName("GetProjectPreferences")
+            .WithSummary("Get all project preferences");
 
         return builder;
     }

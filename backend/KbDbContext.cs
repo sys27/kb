@@ -84,6 +84,8 @@ public class KbDbContext : DbContext
 
     public DbSet<Chat> Chats { get; set; }
 
+    public DbSet<ChatTopic> ChatTopics { get; set; }
+
     public DbSet<ChatFact> ChatFacts { get; set; }
 
     public DbSet<ChatDecision> ChatDecisions { get; set; }

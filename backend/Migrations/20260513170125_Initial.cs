@@ -218,11 +218,6 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "Chats",
-                columns: new[] { "Id", "LastMessageAt", "LastSummaryUpdate", "Name", "ProjectId", "Summary" },
-                values: new object[] { 2, null, null, "Chat 2", null, null });
-
-            migrationBuilder.InsertData(
                 table: "MessageTypes",
                 columns: new[] { "Id", "Kind", "Role" },
                 values: new object[,]
@@ -233,16 +228,6 @@ namespace Backend.Migrations
                     { 4, "Context", "User" },
                     { 5, "Request", "User" }
                 });
-
-            migrationBuilder.InsertData(
-                table: "Projects",
-                columns: new[] { "Id", "Name" },
-                values: new object[] { 1, "test" });
-
-            migrationBuilder.InsertData(
-                table: "Chats",
-                columns: new[] { "Id", "LastMessageAt", "LastSummaryUpdate", "Name", "ProjectId", "Summary" },
-                values: new object[] { 1, null, null, "Chat 1", 1, null });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ChatDecisions_ChatId",

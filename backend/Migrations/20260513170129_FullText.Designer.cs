@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(KbDbContext))]
-    [Migration("20260512144323_Initial")]
-    partial class Initial
+    [Migration("20260513170129_FullText")]
+    partial class FullText
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -50,19 +50,6 @@ namespace Backend.Migrations
                     b.HasIndex(new[] { "ProjectId" }, "IX_Chats_ProjectId");
 
                     b.ToTable("Chats", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Chat 1",
-                            ProjectId = 1
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Chat 2"
-                        });
                 });
 
             modelBuilder.Entity("Backend.Chats.ChatDecision", b =>
@@ -323,13 +310,6 @@ namespace Backend.Migrations
                         .HasName("PK_Projects");
 
                     b.ToTable("Projects", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "test"
-                        });
                 });
 
             modelBuilder.Entity("Backend.Chats.Chat", b =>

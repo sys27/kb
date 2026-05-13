@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { MessageCircle } from 'lucide-react';
+import { Link } from 'react-router';
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '~/components/ui/item';
 import { projectChatsOptions } from '~/services/project-chats';
 
@@ -21,7 +22,9 @@ export default function ProjectChatsList({ projectId }: ProjectChatsListProps) {
                             <MessageCircle />
                         </ItemMedia>
                         <ItemContent>
-                            <ItemTitle>{chat.name}</ItemTitle>
+                            <ItemTitle>
+                                <Link to={`/chats/${chat.id}`}>{chat.name}</Link>
+                            </ItemTitle>
                             <ItemDescription>{chat.lastMessage}</ItemDescription>
                         </ItemContent>
                         <ItemContent>
