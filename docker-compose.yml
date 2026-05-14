@@ -12,6 +12,8 @@ services:
       - LLM__ApiKey=
       - LLM__Model=
       - LLM__EmbeddingModel=
-      - Ingestion__Enabled=
+      - LLM__RerankingModel=
+      - Ingestion__IsIngestionEnabled=
+      - Ingestion__IsDocumentDiscoveryEnabled=
       - Summarization__Enabled=
       - WebSearch__BaseUrl=
