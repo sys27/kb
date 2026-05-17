@@ -2,6 +2,12 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
+@plugin "@tailwindcss/typography";
+
+@import "highlight.js/styles/atom-one-light.min.css";
+:root.dark {
+  @import "highlight.js/styles/atom-one-dark.min.css";
+}
 
 @custom-variant dark (&:is(.dark *));
 
