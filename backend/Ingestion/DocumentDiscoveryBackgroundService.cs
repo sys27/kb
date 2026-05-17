@@ -14,7 +14,7 @@ public partial class DocumentDiscoveryBackgroundService : BackgroundService
     private readonly string[] supportedFileExtensions =
     [
         ".txt",
-        // TODO: ".md",
+        ".md",
     ];
 
     [GeneratedRegex(@"project-(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
@@ -85,7 +85,7 @@ public partial class DocumentDiscoveryBackgroundService : BackgroundService
                             Project = project,
                         });
                     }
-                    else
+                    else if (document.IsIngested)
                     {
                         if (document.LastModifiedAt == fileInfo.LastWriteTimeUtc)
                             continue;

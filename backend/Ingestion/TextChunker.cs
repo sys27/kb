@@ -16,7 +16,7 @@ public class TextChunker : IChunker
             throw new ArgumentNullException(nameof(text));
 
         var span = text.AsSpan();
-        var tokens = tokenizer.EncodeToTokens(span, out _);
+        var tokens = tokenizer.EncodeToTokens(span, out _, false);
 
         if (tokens.Count <= Chunk.MaxTokens)
             return [new Chunk(0, text.Length)];
@@ -63,6 +63,9 @@ public class TextChunker : IChunker
                 if (endToken.Offset.Start.Value <= endSymbol && endSymbol <= endToken.Offset.End.Value)
                     break;
             }
+
+            if (endIndex == -1)
+                throw new InvalidOperationException("Failed to find end token");
 
             startIndex = endIndex + 1;
 

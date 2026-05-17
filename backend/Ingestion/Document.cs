@@ -20,6 +20,15 @@ public class Document
 
     public ICollection<DocumentChunk> DocumentChunks { get; init; } = new List<DocumentChunk>();
 
+    public bool IsPending
+        => Status == DocumentStatus.Pending;
+
+    public bool IsIngested
+        => Status == DocumentStatus.Ingested;
+
+    public bool IsFailed
+        => Status == DocumentStatus.Failed;
+
     public void MarkAsToProcess()
         => Status = DocumentStatus.Pending;
 

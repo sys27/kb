@@ -13,8 +13,8 @@ public class ChunkerFactory
 
         return fileInfo.Extension switch
         {
-            ".txt" => serviceProvider.GetRequiredService<TextChunker>(),
-            ".md" => serviceProvider.GetRequiredService<MarkdownChunker>(),
+            ".txt" or ".md" => serviceProvider.GetRequiredService<TextChunker>(),
+            // TODO: ".md" => serviceProvider.GetRequiredService<MarkdownChunker>(),
             _ => throw new InvalidOperationException(),
         };
     }
