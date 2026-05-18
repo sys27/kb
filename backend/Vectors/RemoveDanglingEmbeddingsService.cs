@@ -32,7 +32,6 @@ public partial class RemoveDanglingEmbeddingsService : BackgroundService
             using var scope = scopeFactory.CreateScope();
             await using var dbContext = scope.ServiceProvider.GetRequiredService<KbDbContext>();
 
-            var lastSeenId = default(int?);
             while (true)
             {
                 // TODO: migrate to EF?
@@ -40,8 +39,7 @@ public partial class RemoveDanglingEmbeddingsService : BackgroundService
                     $"""
                      SELECT e.Id
                      FROM Embeddings e
-                     WHERE (@lastSeenId IS NULL OR e.Id > @lastSeenId)
-                       AND ((e.SourceType = {(int)EmbeddingSourceType.DocumentChunk}
+                     WHERE (e.SourceType = {(int)EmbeddingSourceType.DocumentChunk}
                          AND NOT EXISTS (SELECT 1
                                          FROM DocumentChunks dc
                                          WHERE dc.Id = e.SourceId))
@@ -60,15 +58,13 @@ public partial class RemoveDanglingEmbeddingsService : BackgroundService
                          OR (e.SourceType = {(int)EmbeddingSourceType.ChatUserPreference}
                              AND NOT EXISTS (SELECT 1
                                              FROM ChatUserPreferences cup
-                                             WHERE cup.Id = e.SourceId)))
+                                             WHERE cup.Id = e.SourceId))
                      ORDER BY e.Id
                      LIMIT {embeddingsOptions.BatchSize}
                      """;
 
                 var embeddingIds = await dbContext.Database
-                    .SqlQueryRaw<int>(
-                        sql,
-                        new SqliteParameter("@lastSeenId", lastSeenId ?? (object)DBNull.Value) { IsNullable = true })
+                    .SqlQueryRaw<int>(sql)
                     .ToListAsync(stoppingToken);
 
                 if (embeddingIds.Count == 0)
@@ -77,15 +73,21 @@ public partial class RemoveDanglingEmbeddingsService : BackgroundService
                 await using var transaction = await dbContext.Database.BeginTransactionAsync(stoppingToken);
                 try
                 {
-                    var count = await dbContext.Database.ExecuteSqlAsync(
+                    var parameters = embeddingIds.Select((x, i) => new SqliteParameter($"@id{i}", x)).ToArray();
+                    var parameterNames = string.Join(", ", parameters.Select(x => x.ParameterName));
+
+#pragma warning disable EF1002
+                    var count = await dbContext.Database.ExecuteSqlRawAsync(
                         $"""
                          DELETE FROM vec_Embeddings AS ve
-                         WHERE ve.Id IN ({embeddingIds});
+                         WHERE ve.Id IN ({parameterNames});
 
                          DELETE FROM Embeddings AS ve
-                         WHERE ve.Id IN ({embeddingIds})
+                         WHERE ve.Id IN ({parameterNames});
                          """,
+                        parameters,
                         stoppingToken);
+#pragma warning restore EF1002
 
                     await transaction.CommitAsync(stoppingToken);
 
@@ -100,8 +102,6 @@ public partial class RemoveDanglingEmbeddingsService : BackgroundService
 
                 if (embeddingIds.Count < embeddingsOptions.BatchSize)
                     break;
-
-                lastSeenId = embeddingIds[^1];
             }
 
             logger.LogInformation("Removing dangling embeddings completed.");
