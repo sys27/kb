@@ -125,6 +125,10 @@ public static class ServiceCollectionExtensions
         services.Configure<SummarizationOptions>(configuration.GetSection(SummarizationOptions.Section));
         services.AddHostedService<SummarizationBackgroundService>();
 
+        services.AddSingleton<IValidateOptions<RemoveDanglingEmbeddingsOptions>, RemoveDanglingEmbeddingsOptions>();
+        services.Configure<RemoveDanglingEmbeddingsOptions>(configuration.GetSection(RemoveDanglingEmbeddingsOptions.Section));
+        services.AddHostedService<RemoveDanglingEmbeddingsService>();
+
         return services;
     }
 }
