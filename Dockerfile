@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0.203 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.300 AS build
 ARG BUILD_CONFIGURATION=Release
 
 WORKDIR /src
