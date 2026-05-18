@@ -25,6 +25,7 @@ import {
     InputGroupButton,
     InputGroupTextarea,
 } from '~/components/ui/input-group';
+import { Kbd } from '~/components/ui/kbd';
 import { ScrollArea } from '~/components/ui/scroll-area';
 import { Spinner } from '~/components/ui/spinner';
 import {
@@ -193,6 +194,15 @@ export default function Chat({ params }: Route.ComponentProps) {
                                     value={field.state.value}
                                     onBlur={field.handleBlur}
                                     onChange={e => field.handleChange(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+
+                                            if (!mutation.isPending && field.state.value.trim()) {
+                                                form.handleSubmit();
+                                            }
+                                        }
+                                    }}
                                     data-invalid={isInvalid}
                                     aria-invalid={isInvalid}
                                     required
@@ -227,6 +237,11 @@ export default function Chat({ params }: Route.ComponentProps) {
                         </InputGroupButton>
                     </InputGroupAddon>
                 </InputGroup>
+                <div className="flex flex-col items-center gap-4">
+                    <p className="text-sm text-muted-foreground">
+                        Use <Kbd>Enter</Kbd> to send, <Kbd>Shift + Enter</Kbd> for a new line.
+                    </p>
+                </div>
             </form>
         </div>
     );
