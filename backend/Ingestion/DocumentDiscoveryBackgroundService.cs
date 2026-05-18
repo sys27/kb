@@ -136,10 +136,7 @@ public partial class DocumentDiscoveryBackgroundService : BackgroundService
 
             var files = Directory.EnumerateFiles(directory, "*", enumerationOptions).ToArray();
             if (files.Length == 0)
-            {
                 logger.LogWarning("No files found in directory '{DirectoryName}'", di.Name);
-                continue;
-            }
 
             filesToProcess.Add(new DirectoryFile(projectId, files));
         }
