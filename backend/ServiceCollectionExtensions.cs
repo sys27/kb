@@ -52,7 +52,7 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddAiClient(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddAi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IValidateOptions<LlmOptions>, LlmOptions>();
         services.Configure<LlmOptions>(configuration.GetSection(LlmOptions.Section));
@@ -106,6 +106,8 @@ public static class ServiceCollectionExtensions
 
             return BpeTokenizer.Create(bpeOptions);
         });
+
+        services.AddTransient<ChatGptImporter>();
 
         return services;
     }

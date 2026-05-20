@@ -13,7 +13,8 @@ public static class ChatEndpoints
         group.MapGet("", async (KbDbContext context, CancellationToken cancellationToken) =>
             {
                 var chats = await context.Chats
-                    .OrderByDescending(x => x.Id)
+                    .OrderBy(x => x.LastMessageAt != null)
+                    .ThenByDescending(x => x.LastMessageAt)
                     .AsNoTracking()
                     .ToResponse()
                     .ToListAsync(cancellationToken);
@@ -92,6 +93,44 @@ public static class ChatEndpoints
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("DeleteChat")
             .WithSummary("Delete a chat by id");
+
+        group.MapPost("/import", async (
+                IFormFile? file,
+                ILoggerFactory loggerFactory,
+                ChatGptImporter importer,
+                CancellationToken cancellationToken) =>
+            {
+                var logger = loggerFactory.CreateLogger("ChatImport");
+
+                if (file is null)
+                {
+                    logger.LogWarning("No file was uploaded.");
+                    return Results.BadRequest();
+                }
+
+                if (file.Length == 0)
+                {
+                    logger.LogWarning("'{FileFileName}' is empty.", file.FileName);
+                    return Results.BadRequest();
+                }
+
+                if (file.ContentType != "application/json")
+                {
+                    logger.LogWarning("'{FileFileName}' is not a JSON file.", file.FileName);
+                    return Results.BadRequest();
+                }
+
+                await using var stream = file.OpenReadStream();
+                await importer.Import(stream, cancellationToken);
+
+                return Results.Ok();
+            })
+            .DisableAntiforgery()
+            .ProducesProblem(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName("ImportChats")
+            .WithSummary("Import chats from a file");
 
         return app;
     }

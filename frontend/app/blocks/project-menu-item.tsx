@@ -131,6 +131,7 @@ export default function ProjectMenuItem({ project, chats }: ProjectMenuItemProps
             <SidebarMenuSub>
                 {chats
                     .filter(x => x.projectId === project.id)
+                    .slice(0, 5)
                     .map(chat => (
                         <ChatMenuItem
                             key={chat.id}

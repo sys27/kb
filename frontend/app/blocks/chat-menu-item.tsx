@@ -47,7 +47,7 @@ export default function ChatMenuItem({ chat }: { chat: Chat }) {
             <SidebarMenuButton asChild>
                 <Link to={`/chats/${chat.id}`}>
                     <MessageCircle />
-                    {chat.name}
+                    <span className="truncate">{chat.name}</span>
                 </Link>
             </SidebarMenuButton>
             <SidebarMenuAction className="opacity-0 transition-opacity group-hover/chat:opacity-100">

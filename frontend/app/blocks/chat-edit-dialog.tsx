@@ -34,7 +34,7 @@ type FormType = z.infer<typeof FormSchema>;
 export default function ChatEditDialog({ chat, open, onOpenChange }: ChatEditDialogProps) {
     let form = useForm({
         defaultValues: {
-            chatName: '',
+            chatName: chat.name,
         } as FormType,
         validators: {
             onChange: FormSchema,

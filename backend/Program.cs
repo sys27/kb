@@ -17,7 +17,7 @@ builder.Services.AddValidation();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddDatabase(builder.Configuration, builder.Environment);
-builder.Services.AddAiClient(builder.Configuration);
+builder.Services.AddAi(builder.Configuration);
 builder.Services.AddIngestion(builder.Configuration);
 builder.Services.AddConversationPipeline(builder.Configuration);
 
