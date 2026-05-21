@@ -1,5 +1,5 @@
 import { useForm } from '@tanstack/react-form';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import z from 'zod';
 import { Button } from '~/components/ui/button';
 import {
@@ -23,10 +23,9 @@ import {
 import { Spinner } from '~/components/ui/spinner';
 import { chatsOptions, createChat, type Chat } from '~/services/chats';
 import { projectChatsOptions } from '~/services/project-chats';
-import type { Project } from '~/services/projects';
+import { projectsOptions } from '~/services/projects';
 
 interface ChatNewDialogProps {
-    projects: Project[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
@@ -36,16 +35,17 @@ let FormSchema = z.object({
         .string()
         .min(1, 'Chat name is required')
         .max(256, 'Chat name must be less than 256 characters'),
-    projectId: z.string().optional(),
+    projectId: z.string(),
 });
 
 type FormType = z.infer<typeof FormSchema>;
 
-export default function ChatNewDialog({ projects, open, onOpenChange }: ChatNewDialogProps) {
+export default function ChatNewDialog({ open, onOpenChange }: ChatNewDialogProps) {
+    let { data: projects } = useQuery(projectsOptions);
     let form = useForm({
         defaultValues: {
             chatName: '',
-            projectId: undefined,
+            projectId: '0',
         } as FormType,
         validators: {
             onChange: FormSchema,
@@ -59,8 +59,11 @@ export default function ChatNewDialog({ projects, open, onOpenChange }: ChatNewD
         },
     });
     let mutation = useMutation({
-        mutationFn: (form: FormType) =>
-            createChat(form.chatName, form.projectId ? parseInt(form.projectId) : undefined),
+        mutationFn: (form: FormType) => {
+            let projectId = form.projectId == '0' ? null : parseInt(form.projectId);
+
+            return createChat(form.chatName, projectId);
+        },
         onMutate: async (newChat, context) => {
             await context.client.cancelQueries(chatsOptions);
 
@@ -70,7 +73,7 @@ export default function ChatNewDialog({ projects, open, onOpenChange }: ChatNewD
                     {
                         id: Math.random(),
                         name: newChat.chatName,
-                        projectId: newChat.projectId ? parseInt(newChat.projectId) : null,
+                        projectId: newChat.projectId == '0' ? null : parseInt(newChat.projectId),
                     },
                     ...previousChats,
                 ]);
@@ -146,7 +149,7 @@ export default function ChatNewDialog({ projects, open, onOpenChange }: ChatNewD
                                         <FieldLabel htmlFor={field.name}>Project</FieldLabel>
                                         <Select
                                             name={field.name}
-                                            value={field.state.value}
+                                            value={field.state.value!}
                                             onValueChange={field.handleChange}>
                                             <SelectTrigger
                                                 aria-invalid={isInvalid}
@@ -155,7 +158,12 @@ export default function ChatNewDialog({ projects, open, onOpenChange }: ChatNewD
                                             </SelectTrigger>
                                             <SelectContent position="popper">
                                                 <SelectGroup>
-                                                    {projects.map(project => (
+                                                    <SelectItem
+                                                        key={0}
+                                                        value={'0'}>
+                                                        No project
+                                                    </SelectItem>
+                                                    {projects?.map(project => (
                                                         <SelectItem
                                                             key={project.id}
                                                             value={project.id.toString()}>

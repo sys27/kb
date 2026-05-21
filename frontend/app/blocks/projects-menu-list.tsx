@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, FolderPlus } from 'lucide-react';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
@@ -8,52 +9,60 @@ import {
     SidebarGroupLabel,
     SidebarMenu,
 } from '~/components/ui/sidebar';
-import type { Chat } from '~/services/chats';
-import type { Project } from '~/services/projects';
+import { Skeleton } from '~/components/ui/skeleton';
+import { projectsOptions } from '~/services/projects';
 import ProjectMenuItem from './project-menu-item';
 import ProjectNewDialog from './project-new-dialog';
 
-interface ProjectsMenuListProps {
-    projects: Project[];
-    chats: Chat[];
-}
-
-export default function ProjectsMenuList({ projects, chats }: ProjectsMenuListProps) {
+export default function ProjectsMenuList() {
+    let { data: projects, isPending } = useQuery(projectsOptions);
     let [openNewDialog, setOpenNewDialog] = useState(false);
 
     return (
         <Collapsible
             defaultOpen
             className="group/collapsible">
-            <SidebarGroup>
-                <SidebarGroupLabel asChild>
-                    <CollapsibleTrigger>
-                        <ChevronRight className="transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                        Projects
-                    </CollapsibleTrigger>
-                </SidebarGroupLabel>
-                <SidebarGroupAction>
-                    <FolderPlus onClick={() => setOpenNewDialog(true)} />
-
-                    <ProjectNewDialog
-                        open={openNewDialog}
-                        onOpenChange={setOpenNewDialog}
-                    />
-                </SidebarGroupAction>
-                <CollapsibleContent>
+            {isPending ? (
+                <SidebarGroup>
+                    <SidebarGroupLabel>Projects</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {projects.map(project => (
-                                <ProjectMenuItem
-                                    key={project.id}
-                                    project={project}
-                                    chats={chats}
-                                />
-                            ))}
+                            <Skeleton className="h-8 w-full" />
+                            <Skeleton className="h-8 w-full" />
+                            <Skeleton className="h-8 w-full" />
                         </SidebarMenu>
                     </SidebarGroupContent>
-                </CollapsibleContent>
-            </SidebarGroup>
+                </SidebarGroup>
+            ) : (
+                <SidebarGroup>
+                    <SidebarGroupLabel asChild>
+                        <CollapsibleTrigger>
+                            <ChevronRight className="transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                            Projects
+                        </CollapsibleTrigger>
+                    </SidebarGroupLabel>
+                    <SidebarGroupAction>
+                        <FolderPlus onClick={() => setOpenNewDialog(true)} />
+
+                        <ProjectNewDialog
+                            open={openNewDialog}
+                            onOpenChange={setOpenNewDialog}
+                        />
+                    </SidebarGroupAction>
+                    <CollapsibleContent>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {projects?.map(project => (
+                                    <ProjectMenuItem
+                                        key={project.id}
+                                        project={project}
+                                    />
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </CollapsibleContent>
+                </SidebarGroup>
+            )}
         </Collapsible>
     );
 }

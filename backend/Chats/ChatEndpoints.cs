@@ -65,6 +65,7 @@ public static class ChatEndpoints
                     return Results.NotFound();
 
                 chat.Name = request.Name;
+                chat.UpdateProject(request.ProjectId);
                 await context.SaveChangesAsync(cancellationToken);
 
                 var response = chat.ToResponse();

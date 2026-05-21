@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, MessageCirclePlus } from 'lucide-react';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
@@ -8,54 +9,62 @@ import {
     SidebarGroupLabel,
     SidebarMenu,
 } from '~/components/ui/sidebar';
-import type { Chat } from '~/services/chats';
-import type { Project } from '~/services/projects';
+import { Skeleton } from '~/components/ui/skeleton';
+import { chatsOptions } from '~/services/chats';
 import ChatMenuItem from './chat-menu-item';
 import ChatNewDialog from './chat-new-dialog';
 
-interface ChatsMenuListProps {
-    projects: Project[];
-    chats: Chat[];
-}
-
-export default function ChatsMenuList({ projects, chats }: ChatsMenuListProps) {
+export default function ChatsMenuList() {
+    let { data: chats, isPending } = useQuery(chatsOptions);
     let [openNewDialog, setOpenNewDialog] = useState(false);
 
     return (
         <Collapsible
             defaultOpen
             className="group/collapsible">
-            <SidebarGroup>
-                <SidebarGroupLabel asChild>
-                    <CollapsibleTrigger>
-                        <ChevronRight className="transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                        Chats
-                    </CollapsibleTrigger>
-                </SidebarGroupLabel>
-                <SidebarGroupAction>
-                    <MessageCirclePlus onClick={() => setOpenNewDialog(true)} />
-
-                    <ChatNewDialog
-                        projects={projects}
-                        open={openNewDialog}
-                        onOpenChange={setOpenNewDialog}
-                    />
-                </SidebarGroupAction>
-                <CollapsibleContent>
+            {isPending ? (
+                <SidebarGroup>
+                    <SidebarGroupLabel>Chats</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {chats
-                                .filter(x => x.projectId === null)
-                                .map(chat => (
-                                    <ChatMenuItem
-                                        key={chat.id}
-                                        chat={chat}
-                                    />
-                                ))}
+                            <Skeleton className="h-8 w-full" />
+                            <Skeleton className="h-8 w-full" />
+                            <Skeleton className="h-8 w-full" />
                         </SidebarMenu>
                     </SidebarGroupContent>
-                </CollapsibleContent>
-            </SidebarGroup>
+                </SidebarGroup>
+            ) : (
+                <SidebarGroup>
+                    <SidebarGroupLabel asChild>
+                        <CollapsibleTrigger>
+                            <ChevronRight className="transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                            Chats
+                        </CollapsibleTrigger>
+                    </SidebarGroupLabel>
+                    <SidebarGroupAction>
+                        <MessageCirclePlus onClick={() => setOpenNewDialog(true)} />
+
+                        <ChatNewDialog
+                            open={openNewDialog}
+                            onOpenChange={setOpenNewDialog}
+                        />
+                    </SidebarGroupAction>
+                    <CollapsibleContent>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {chats
+                                    ?.filter(x => x.projectId === null)
+                                    .map(chat => (
+                                        <ChatMenuItem
+                                            key={chat.id}
+                                            chat={chat}
+                                        />
+                                    ))}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </CollapsibleContent>
+                </SidebarGroup>
+            )}
         </Collapsible>
     );
 }

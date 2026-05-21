@@ -25,7 +25,7 @@ export async function getChats(): Promise<Chat[]> {
     return z.array(ChatSchema).parse(json);
 }
 
-export async function createChat(name: string, projectId?: number): Promise<Chat> {
+export async function createChat(name: string, projectId: number | null): Promise<Chat> {
     let response = await fetch('/api/chats', {
         method: 'POST',
         headers: {
@@ -42,13 +42,17 @@ export async function createChat(name: string, projectId?: number): Promise<Chat
     return ChatSchema.parse(json);
 }
 
-export async function updateChat(id: number, name: string) {
+export async function updateChat(
+    id: number,
+    name: string,
+    projectId: number | null,
+): Promise<Chat> {
     let response = await fetch(`/api/chats/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, projectId }),
     });
     if (!response.ok) {
         throw new Error('Failed to update chat');

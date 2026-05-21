@@ -17,7 +17,7 @@ public class Chat
 
     public DateTime? LastSummaryUpdate { get; set; }
 
-    public int? ProjectId { get; init; }
+    public int? ProjectId { get; set; }
 
     public Project? Project { get; init; }
 
@@ -71,5 +71,13 @@ public class Chat
 
         foreach (var preference in preferences)
             UserPreferences.Add(new ChatUserPreference { Preference = preference, ChatId = Id, Chat = this });
+    }
+
+    public void UpdateProject(int? projectId)
+    {
+        if (ProjectId != projectId)
+            LastSummaryUpdate = null;
+
+        ProjectId = projectId;
     }
 }

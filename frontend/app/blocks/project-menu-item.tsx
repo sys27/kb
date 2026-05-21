@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Ellipsis, FileText, Folder, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
@@ -27,7 +27,7 @@ import {
     SidebarMenuSub,
 } from '~/components/ui/sidebar';
 import { Spinner } from '~/components/ui/spinner';
-import type { Chat } from '~/services/chats';
+import { chatsOptions } from '~/services/chats';
 import { deleteProject, projectsOptions, type Project } from '~/services/projects';
 import ChatMenuItem from './chat-menu-item';
 import ProjectEditDialog from './project-edit-dialog';
@@ -35,10 +35,10 @@ import UploadDocumentDialog from './upload-document-dialog';
 
 interface ProjectMenuItemProps {
     project: Project;
-    chats: Chat[];
 }
 
-export default function ProjectMenuItem({ project, chats }: ProjectMenuItemProps) {
+export default function ProjectMenuItem({ project }: ProjectMenuItemProps) {
+    let { data: chats } = useQuery(chatsOptions);
     let [openUploadDialog, setOpenUploadDialog] = useState(false);
     let [openEditDialog, setOpenEditDialog] = useState(false);
     let [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -130,7 +130,7 @@ export default function ProjectMenuItem({ project, chats }: ProjectMenuItemProps
             </SidebarMenuAction>
             <SidebarMenuSub>
                 {chats
-                    .filter(x => x.projectId === project.id)
+                    ?.filter(x => x.projectId === project.id)
                     .slice(0, 5)
                     .map(chat => (
                         <ChatMenuItem

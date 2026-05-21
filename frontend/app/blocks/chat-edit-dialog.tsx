@@ -1,5 +1,5 @@
 import { useForm } from '@tanstack/react-form';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import z from 'zod';
 import { Button } from '~/components/ui/button';
 import {
@@ -12,9 +12,18 @@ import {
 } from '~/components/ui/dialog';
 import { Field, FieldError, FieldGroup, FieldLabel } from '~/components/ui/field';
 import { Input } from '~/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '~/components/ui/select';
 import { Spinner } from '~/components/ui/spinner';
 import { chatsOptions, updateChat, type Chat } from '~/services/chats';
 import { projectChatsOptions } from '~/services/project-chats';
+import { projectsOptions } from '~/services/projects';
 
 interface ChatEditDialogProps {
     chat: Chat;
@@ -27,14 +36,17 @@ let FormSchema = z.object({
         .string()
         .min(1, 'Chat name is required')
         .max(256, 'Chat name must be less than 256 characters'),
+    projectId: z.string(),
 });
 
 type FormType = z.infer<typeof FormSchema>;
 
 export default function ChatEditDialog({ chat, open, onOpenChange }: ChatEditDialogProps) {
+    let { data: projects } = useQuery(projectsOptions);
     let form = useForm({
         defaultValues: {
             chatName: chat.name,
+            projectId: chat.projectId?.toString() || '0',
         } as FormType,
         validators: {
             onChange: FormSchema,
@@ -48,7 +60,11 @@ export default function ChatEditDialog({ chat, open, onOpenChange }: ChatEditDia
         },
     });
     let mutation = useMutation({
-        mutationFn: (form: FormType) => updateChat(chat.id, form.chatName),
+        mutationFn: (form: FormType) => {
+            let projectId = form.projectId == '0' ? null : parseInt(form.projectId);
+
+            return updateChat(chat.id, form.chatName, projectId);
+        },
         onMutate: async (newChat, context) => {
             await context.client.cancelQueries(chatsOptions);
 
@@ -59,7 +75,16 @@ export default function ChatEditDialog({ chat, open, onOpenChange }: ChatEditDia
                     context.client.setQueryData(
                         chatsOptions.queryKey,
                         previousChats.map(c =>
-                            c.id === chat.id ? { ...c, name: newChat.chatName } : c,
+                            c.id === chat.id
+                                ? {
+                                      ...c,
+                                      name: newChat.chatName,
+                                      projectId:
+                                          newChat.projectId == '0'
+                                              ? null
+                                              : parseInt(newChat.projectId),
+                                  }
+                                : c,
                         ),
                     );
                 }
@@ -116,6 +141,49 @@ export default function ChatEditDialog({ chat, open, onOpenChange }: ChatEditDia
                                             aria-invalid={isInvalid}
                                             required
                                         />
+                                        {isInvalid && (
+                                            <FieldError errors={field.state.meta.errors} />
+                                        )}
+                                    </Field>
+                                );
+                            }}
+                        />
+
+                        <form.Field
+                            name="projectId"
+                            children={field => {
+                                const isInvalid =
+                                    field.state.meta.isTouched && !field.state.meta.isValid;
+
+                                return (
+                                    <Field data-invalid={isInvalid}>
+                                        <FieldLabel htmlFor={field.name}>Project</FieldLabel>
+                                        <Select
+                                            name={field.name}
+                                            value={field.state.value!}
+                                            onValueChange={field.handleChange}>
+                                            <SelectTrigger
+                                                aria-invalid={isInvalid}
+                                                className="w-full">
+                                                <SelectValue placeholder="Select a project" />
+                                            </SelectTrigger>
+                                            <SelectContent position="popper">
+                                                <SelectGroup>
+                                                    <SelectItem
+                                                        key={0}
+                                                        value={'0'}>
+                                                        No project
+                                                    </SelectItem>
+                                                    {projects?.map(project => (
+                                                        <SelectItem
+                                                            key={project.id}
+                                                            value={project.id.toString()}>
+                                                            {project.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectGroup>
+                                            </SelectContent>
+                                        </Select>
                                         {isInvalid && (
                                             <FieldError errors={field.state.meta.errors} />
                                         )}
