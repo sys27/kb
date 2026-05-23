@@ -3,11 +3,13 @@ import z from 'zod';
 
 const ProjectPreferenceSchema = z.object({
     id: z.number(),
-    preference: z.string(),
-    chat: z.object({
-        id: z.number(),
-        name: z.string(),
-    }),
+    name: z.string(),
+    userPreferences: z.array(
+        z.object({
+            id: z.number(),
+            name: z.string(),
+        }),
+    ),
 });
 
 export type ProjectPreference = z.infer<typeof ProjectPreferenceSchema>;

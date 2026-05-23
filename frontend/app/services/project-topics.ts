@@ -3,11 +3,13 @@ import z from 'zod';
 
 const ProjectTopicSchema = z.object({
     id: z.number(),
-    topic: z.string(),
-    chat: z.object({
-        id: z.number(),
-        name: z.string(),
-    }),
+    name: z.string(),
+    topics: z.array(
+        z.object({
+            id: z.number(),
+            name: z.string(),
+        }),
+    ),
 });
 
 export type ProjectTopic = z.infer<typeof ProjectTopicSchema>;

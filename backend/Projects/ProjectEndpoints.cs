@@ -227,12 +227,12 @@ public static class ProjectEndpoints
 
         group.MapGet("", async (int projectId, KbDbContext context, CancellationToken cancellationToken) =>
             {
-                var topics = await context.ChatTopics
-                    .Include(x => x.Chat)
-                    .Where(x => x.Chat!.ProjectId == projectId)
-                    .OrderBy(x => x.Topic)
+                var topics = await context.Chats
+                    .Include(x => x.Topics)
+                    .Where(x => x.ProjectId == projectId && x.Topics.Any())
+                    .OrderBy(x => x.Name)
                     .AsNoTracking()
-                    .ToResponse()
+                    .ToTopicsResponse()
                     .ToListAsync(cancellationToken);
 
                 return Results.Ok(topics);
@@ -251,12 +251,12 @@ public static class ProjectEndpoints
 
         group.MapGet("", async (int projectId, KbDbContext context, CancellationToken cancellationToken) =>
             {
-                var facts = await context.ChatFacts
-                    .Include(x => x.Chat)
-                    .Where(x => x.Chat!.ProjectId == projectId)
-                    .OrderBy(x => x.Fact)
+                var facts = await context.Chats
+                    .Include(x => x.Facts)
+                    .Where(x => x.ProjectId == projectId && x.Facts.Any())
+                    .OrderBy(x => x.Name)
                     .AsNoTracking()
-                    .ToResponse()
+                    .ToFactResponse()
                     .ToListAsync(cancellationToken);
 
                 return Results.Ok(facts);
@@ -275,12 +275,12 @@ public static class ProjectEndpoints
 
         group.MapGet("", async (int projectId, KbDbContext context, CancellationToken cancellationToken) =>
             {
-                var decisions = await context.ChatDecisions
-                    .Include(x => x.Chat)
-                    .Where(x => x.Chat!.ProjectId == projectId)
-                    .OrderBy(x => x.Decision)
+                var decisions = await context.Chats
+                    .Include(x => x.Decisions)
+                    .Where(x => x.ProjectId == projectId && x.Decisions.Any())
+                    .OrderBy(x => x.Name)
                     .AsNoTracking()
-                    .ToResponse()
+                    .ToDecisionResponse()
                     .ToListAsync(cancellationToken);
 
                 return Results.Ok(decisions);
@@ -299,12 +299,12 @@ public static class ProjectEndpoints
 
         group.MapGet("", async (int projectId, KbDbContext context, CancellationToken cancellationToken) =>
             {
-                var preferences = await context.ChatUserPreferences
-                    .Include(x => x.Chat)
-                    .Where(x => x.Chat!.ProjectId == projectId)
-                    .OrderBy(x => x.Preference)
+                var preferences = await context.Chats
+                    .Include(x => x.UserPreferences)
+                    .Where(x => x.ProjectId == projectId && x.UserPreferences.Any())
+                    .OrderBy(x => x.Name)
                     .AsNoTracking()
-                    .ToResponse()
+                    .ToPreferenceResponse()
                     .ToListAsync(cancellationToken);
 
                 return Results.Ok(preferences);

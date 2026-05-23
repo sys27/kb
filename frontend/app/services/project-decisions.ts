@@ -3,12 +3,13 @@ import z from 'zod';
 
 const ProjectDecisionSchema = z.object({
     id: z.number(),
-    decision: z.string(),
-    reason: z.string(),
-    chat: z.object({
-        id: z.number(),
-        name: z.string(),
-    }),
+    name: z.string(),
+    decisions: z.array(
+        z.object({
+            decision: z.string(),
+            reason: z.string(),
+        }),
+    ),
 });
 
 export type ProjectDecision = z.infer<typeof ProjectDecisionSchema>;

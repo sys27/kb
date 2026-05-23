@@ -21,25 +21,22 @@ public static partial class ProjectMapper
     [MapperIgnoreTarget(nameof(Project.Documents))]
     public static partial Project ToEntity(this CreateProjectRequest request);
 
-    public static partial ProjectDocumentListResponse ToResponse(this Document document);
-
     public static partial IQueryable<ProjectDocumentListResponse> ToResponse(this IQueryable<Document> document);
 
-    public static partial IdNameResponse ToResponse(Chat chat);
+    [MapProperty(nameof(ChatTopic.Topic), nameof(IdNameResponse.Name))]
+    public static partial IdNameResponse ToResponse(ChatTopic topic);
 
-    public static partial ProjectTopicListResponse ToResponse(ChatTopic topic);
+    public static partial IQueryable<ProjectTopicListResponse> ToTopicsResponse(this IQueryable<Chat> chats);
 
-    public static partial IQueryable<ProjectTopicListResponse> ToResponse(this IQueryable<ChatTopic> topics);
+    [MapProperty(nameof(ChatFact.Fact), nameof(IdNameResponse.Name))]
+    public static partial IdNameResponse ToResponse(ChatFact topic);
 
-    public static partial ProjectFactListResponse ToResponse(ChatFact fact);
+    public static partial IQueryable<ProjectFactListResponse> ToFactResponse(this IQueryable<Chat> facts);
 
-    public static partial IQueryable<ProjectFactListResponse> ToResponse(this IQueryable<ChatFact> facts);
+    public static partial IQueryable<ProjectDecisionListResponse> ToDecisionResponse(this IQueryable<Chat> decisions);
 
-    public static partial ProjectDecisionListResponse ToResponse(ChatDecision decision);
+    [MapProperty(nameof(ChatUserPreference.Preference), nameof(IdNameResponse.Name))]
+    public static partial IdNameResponse ToResponse(ChatUserPreference topic);
 
-    public static partial IQueryable<ProjectDecisionListResponse> ToResponse(this IQueryable<ChatDecision> decisions);
-
-    public static partial ProjectPreferenceListResponse ToResponse(ChatUserPreference preference);
-
-    public static partial IQueryable<ProjectPreferenceListResponse> ToResponse(this IQueryable<ChatUserPreference> preferences);
+    public static partial IQueryable<ProjectPreferenceListResponse> ToPreferenceResponse(this IQueryable<Chat> preferences);
 }

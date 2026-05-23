@@ -3,11 +3,13 @@ import z from 'zod';
 
 const ProjectFactSchema = z.object({
     id: z.number(),
-    fact: z.string(),
-    chat: z.object({
-        id: z.number(),
-        name: z.string(),
-    }),
+    name: z.string(),
+    facts: z.array(
+        z.object({
+            id: z.number(),
+            name: z.string(),
+        }),
+    ),
 });
 
 export type ProjectFact = z.infer<typeof ProjectFactSchema>;
