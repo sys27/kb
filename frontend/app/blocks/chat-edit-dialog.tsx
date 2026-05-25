@@ -1,5 +1,6 @@
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { Sparkles } from 'lucide-react';
 import z from 'zod';
 import { Button } from '~/components/ui/button';
 import {
@@ -11,7 +12,12 @@ import {
     DialogTitle,
 } from '~/components/ui/dialog';
 import { Field, FieldError, FieldGroup, FieldLabel } from '~/components/ui/field';
-import { Input } from '~/components/ui/input';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from '~/components/ui/input-group';
 import {
     Select,
     SelectContent,
@@ -21,7 +27,7 @@ import {
     SelectValue,
 } from '~/components/ui/select';
 import { Spinner } from '~/components/ui/spinner';
-import { chatsOptions, updateChat, type Chat } from '~/services/chats';
+import { chatsOptions, generateName, updateChat, type Chat } from '~/services/chats';
 import { projectChatsOptions } from '~/services/project-chats';
 import { projectsOptions } from '~/services/projects';
 
@@ -107,6 +113,12 @@ export default function ChatEditDialog({ chat, open, onOpenChange }: ChatEditDia
                 context.client.invalidateQueries(projectChatsOptions(data.projectId));
         },
     });
+    let nameMutation = useMutation({
+        mutationFn: () => generateName(chat.id),
+        onSuccess: newName => {
+            form.setFieldValue('chatName', newName);
+        },
+    });
 
     return (
         <Dialog
@@ -132,15 +144,32 @@ export default function ChatEditDialog({ chat, open, onOpenChange }: ChatEditDia
                                 return (
                                     <Field data-invalid={isInvalid}>
                                         <FieldLabel htmlFor={field.name}>Name</FieldLabel>
-                                        <Input
-                                            id={field.name}
-                                            name={field.name}
-                                            value={field.state.value}
-                                            onBlur={field.handleBlur}
-                                            onChange={e => field.handleChange(e.target.value)}
-                                            aria-invalid={isInvalid}
-                                            required
-                                        />
+                                        <InputGroup>
+                                            <InputGroupInput
+                                                id={field.name}
+                                                name={field.name}
+                                                value={field.state.value}
+                                                onBlur={field.handleBlur}
+                                                onChange={e => field.handleChange(e.target.value)}
+                                                aria-invalid={isInvalid}
+                                                required
+                                            />
+
+                                            <InputGroupAddon align="inline-end">
+                                                <InputGroupButton
+                                                    type="button"
+                                                    variant="ghost"
+                                                    className="text-muted-foreground hover:text-foreground"
+                                                    disabled={nameMutation.isPending}
+                                                    onClick={() => nameMutation.mutate()}>
+                                                    {nameMutation.isPending ? (
+                                                        <Spinner data-icon="inline-start" />
+                                                    ) : (
+                                                        <Sparkles className="size-4" />
+                                                    )}
+                                                </InputGroupButton>
+                                            </InputGroupAddon>
+                                        </InputGroup>
                                         {isInvalid && (
                                             <FieldError errors={field.state.meta.errors} />
                                         )}

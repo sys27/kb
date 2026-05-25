@@ -70,3 +70,15 @@ export async function deleteChat(id: number) {
         throw new Error('Failed to delete chat');
     }
 }
+
+export async function generateName(id: number): Promise<string> {
+    let response = await fetch(`/api/chats/${id}/generate-name`, {
+        method: 'POST',
+    });
+    if (!response.ok) {
+        throw new Error('Failed to generate chat name');
+    }
+
+    let json = await response.json();
+    return json.name;
+}

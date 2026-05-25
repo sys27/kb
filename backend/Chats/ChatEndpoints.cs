@@ -1,6 +1,9 @@
+using System.Text.Json;
 using Backend.Chats.Requests;
 using Backend.Chats.Responses;
+using Backend.Messages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
 
 namespace Backend.Chats;
 
@@ -133,6 +136,61 @@ public static class ChatEndpoints
             .WithName("ImportChats")
             .WithSummary("Import chats from a file");
 
+        group.MapPost("/{id:int}/generate-name", async (
+                int id,
+                KbDbContext context,
+                IChatClient chatClient,
+                CancellationToken cancellationToken) =>
+            {
+                var chat = await context.Chats
+                    .Include(x => x.Messages
+                        .Where(m => m.MessageTypeId == MessageType.UserRequestId ||
+                                    m.MessageTypeId == MessageType.AssistantAnswerId))
+                    .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+                if (chat is null)
+                    return Results.NotFound();
+
+                if (chat.Messages.Count == 0)
+                    return Results.Ok(new ChatNameResponse(chat.Name));
+
+                // TODO: handle long conversations
+                var conversation = new Conversation(
+                    chat.Messages
+                        .OrderBy(x => x.Id)
+                        .Select(m => new Message(
+                            m.MessageTypeId == MessageType.UserRequestId ? "user" : "assistant",
+                            m.Text))
+                        .ToList());
+
+                var json = JsonSerializer.Serialize(conversation, JsonSerializerOptions.Web);
+                var prompt = $"""
+                              Generate a short, descriptive name (1-5 words) for this conversation.
+                              The name should capture the main topic or purpose of the discussion.
+                              Output ONLY the name, nothing else.
+
+                              Conversation:
+                              {json}
+                              """;
+
+                var chatMessage = new ChatMessage(ChatRole.User, prompt);
+                var response = await chatClient.GetResponseAsync(chatMessage, null, cancellationToken);
+                var generatedName = response.Text.Trim().Trim('"').Trim();
+                if (string.IsNullOrWhiteSpace(generatedName))
+                    generatedName = chat.Name;
+
+                return Results.Ok(new ChatNameResponse(generatedName));
+            })
+            .Produces<ChatNameResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName("GenerateChatName")
+            .WithSummary("Generate a chat name from conversation history");
+
         return app;
     }
+
+    private record Conversation(List<Message> Messages);
+
+    private record Message(string Role, string Text);
 }
