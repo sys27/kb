@@ -151,9 +151,33 @@ export default function Chat({ params }: Route.ComponentProps) {
     };
 
     let bottomRef = useRef<HTMLDivElement>(null);
+    let isAtBottomRef = useRef(true);
+
+    let handleScroll = () => {
+        let viewport = document.querySelector('[data-slot="scroll-area-viewport"]');
+        if (!viewport) {
+            return;
+        }
+
+        isAtBottomRef.current =
+            viewport.scrollTop + viewport.clientHeight >= viewport.scrollHeight - 50;
+    };
 
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        let viewport = document.querySelector('[data-slot="scroll-area-viewport"]');
+        viewport?.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            viewport?.removeEventListener('scroll', handleScroll);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!isAtBottomRef.current) {
+            return;
+        }
+
+        bottomRef.current?.scrollIntoView();
     }, [messages, followUpData]);
 
     return (
