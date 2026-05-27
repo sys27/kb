@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, MessageCircle, Plus, Search, Send } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import z from 'zod';
+import FollowUpQuestion from '~/blocks/follow-up-question';
 import MessageItem from '~/blocks/message-item';
 import MessageSkeletonItem from '~/blocks/message-skeleton-item';
 import {
@@ -28,6 +29,7 @@ import {
 import { Kbd } from '~/components/ui/kbd';
 import { ScrollArea } from '~/components/ui/scroll-area';
 import { Spinner } from '~/components/ui/spinner';
+import { followUpQuestionsOptions } from '~/services/chats';
 import {
     getMessages,
     messagesOptions,
@@ -92,10 +94,11 @@ export default function Chat({ params }: Route.ComponentProps) {
                 });
             }
         },
-        onMutate: async form => {
-            await queryClient.cancelQueries(messageOptionsForChat);
+        onMutate: async (form, context) => {
+            await context.client.cancelQueries(messageOptionsForChat);
+            context.client.removeQueries(followUpQuestionsOptions(chatId));
 
-            queryClient.setQueryData<Message[]>(messageOptionsForChat.queryKey, (prev = []) => [
+            context.client.setQueryData<Message[]>(messageOptionsForChat.queryKey, (prev = []) => [
                 ...prev,
                 {
                     id: Date.now(),
@@ -110,32 +113,48 @@ export default function Chat({ params }: Route.ComponentProps) {
             try {
                 let serverMessages = await getMessages(chatId);
 
-                queryClient.setQueryData<Message[]>(messageOptionsForChat.queryKey, (prev = []) => {
-                    let merged = serverMessages.map(srv => {
-                        let match = prev.find(
-                            p => p.messageTypeId === srv.messageTypeId && p.text === srv.text,
-                        );
+                context.client.setQueryData<Message[]>(
+                    messageOptionsForChat.queryKey,
+                    (prev = []) => {
+                        let merged = serverMessages.map(srv => {
+                            let match = prev.find(
+                                p => p.messageTypeId === srv.messageTypeId && p.text === srv.text,
+                            );
 
-                        if (match) {
-                            return { ...match, ...srv };
-                        }
+                            if (match) {
+                                return { ...match, ...srv };
+                            }
 
-                        return srv;
-                    });
+                            return srv;
+                        });
 
-                    return merged;
-                });
+                        return merged;
+                    },
+                );
             } catch {
                 context.client.invalidateQueries(messageOptionsForChat);
             }
+
+            context.client.invalidateQueries(followUpQuestionsOptions(chatId));
         },
     });
+
+    let followUpOptions = followUpQuestionsOptions(chatId);
+    let { data: followUpData } = useQuery({
+        ...followUpOptions,
+        enabled: !!messages && messages.length > 0 && !mutation.isPending,
+    });
+
+    let handleFollowUpSubmit = (text: string) => () => {
+        form.setFieldValue('message', text);
+        form.handleSubmit();
+    };
 
     let bottomRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }, [messages, followUpData]);
 
     return (
         <div className="flex h-screen w-full flex-col gap-4 p-2">
@@ -168,6 +187,14 @@ export default function Chat({ params }: Route.ComponentProps) {
                             </EmptyHeader>
                         </Empty>
                     )}
+
+                    {followUpData?.questions.map(question => (
+                        <FollowUpQuestion
+                            key={question}
+                            text={question}
+                            onSubmit={handleFollowUpSubmit(question)}
+                        />
+                    ))}
                 </div>
 
                 <div ref={bottomRef} />

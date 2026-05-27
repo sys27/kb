@@ -43,7 +43,7 @@ export type MessageSse = z.infer<typeof MessageSchemaSse>;
 
 export function messagesOptions(chatId: number) {
     return queryOptions({
-        queryKey: ['messages', chatId],
+        queryKey: ['chats', chatId, 'messages'],
         queryFn: () => getMessages(chatId),
         staleTime: Infinity,
     });

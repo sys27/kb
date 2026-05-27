@@ -187,6 +187,63 @@ public static class ChatEndpoints
             .WithName("GenerateChatName")
             .WithSummary("Generate a chat name from conversation history");
 
+        group.MapPost("/{id:int}/follow-ups", async (
+                int id,
+                KbDbContext context,
+                IChatClient chatClient,
+                CancellationToken cancellationToken) =>
+            {
+                var chat = await context.Chats
+                    .Include(x => x.Messages
+                        .Where(m => m.MessageTypeId == MessageType.UserRequestId ||
+                                    m.MessageTypeId == MessageType.AssistantAnswerId))
+                    .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+                if (chat is null)
+                    return Results.NotFound();
+
+                if (chat.Messages.Count == 0)
+                    return Results.Ok(new FollowUpQuestionsResponse([]));
+
+                var messages = chat.Messages
+                    .OrderBy(x => x.Id)
+                    .ToList();
+
+                var lastUserMessageIndex = messages
+                    .FindLastIndex(m => m.MessageTypeId == MessageType.UserRequestId);
+
+                if (lastUserMessageIndex < 0)
+                    return Results.Ok(new FollowUpQuestionsResponse([]));
+
+                var conversation = new Conversation(
+                    messages
+                        .Skip(lastUserMessageIndex)
+                        .Select(m => new Message(
+                            m.MessageTypeId == MessageType.UserRequestId ? "user" : "assistant",
+                            m.Text))
+                        .ToList());
+
+                var json = JsonSerializer.Serialize(conversation, JsonSerializerOptions.Web);
+                var prompt = $"""
+                              Given this conversation turn, generate up to 3 short follow-up questions the user might naturally ask next.
+
+                              Return the questions as a JSON array of strings. For example: ["What is X?", "How do I do Y?", "Can you show an example?"]
+
+                              {json}
+                              """;
+
+                var chatMessage = new ChatMessage(ChatRole.User, prompt);
+                var response = await chatClient.GetResponseAsync(chatMessage, null, cancellationToken);
+                var followUps = JsonSerializer.Deserialize<List<string>>(response.Text)?.Take(3).ToList() ?? [];
+
+                return Results.Ok(new FollowUpQuestionsResponse(followUps));
+            })
+            .Produces<FollowUpQuestionsResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName("GenerateFollowUps")
+            .WithSummary("Generate follow-up questions for a chat");
+
         return app;
     }
 

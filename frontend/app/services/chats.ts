@@ -9,11 +9,32 @@ const ChatSchema = z.object({
 
 export type Chat = z.infer<typeof ChatSchema>;
 
+const FollowUpQuestions = z.object({
+    questions: z.array(z.string()),
+});
+
+export type FollowUpQuestions = z.infer<typeof FollowUpQuestions>;
+
 export const chatsOptions = queryOptions({
     queryKey: ['chats'],
     queryFn: getChats,
     staleTime: Infinity,
 });
+
+export function chatOptions(id: number) {
+    return queryOptions({
+        queryKey: ['chats', id],
+        staleTime: Infinity,
+    });
+}
+
+export function followUpQuestionsOptions(id: number) {
+    return queryOptions({
+        queryKey: ['chats', id, 'follow-ups'],
+        queryFn: () => getFollowUpQuestions(id),
+        staleTime: Infinity,
+    });
+}
 
 export async function getChats(): Promise<Chat[]> {
     let response = await fetch('/api/chats');
@@ -81,4 +102,16 @@ export async function generateName(id: number): Promise<string> {
 
     let json = await response.json();
     return json.name;
+}
+
+export async function getFollowUpQuestions(id: number): Promise<FollowUpQuestions> {
+    let response = await fetch(`/api/chats/${id}/follow-ups`, {
+        method: 'POST',
+    });
+    if (!response.ok) {
+        throw new Error('Failed to fetch follow-up questions');
+    }
+
+    let json = await response.json();
+    return FollowUpQuestions.parse(json);
 }
