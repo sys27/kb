@@ -1,7 +1,7 @@
 using System.ClientModel;
 using Backend.Chats;
 using Backend.Ingestion;
-using Backend.Messages.Pipelines;
+using Backend.Llama;
 using Backend.Vectors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -89,13 +89,18 @@ public static class ServiceCollectionExtensions
         });
 
         services
-            .AddHttpClient<RerankClient>((provider, client) =>
+            .AddHttpClient<LlamaCppClient>((provider, client) =>
             {
                 var options = provider.GetRequiredService<IOptions<LlmOptions>>();
 
                 client.BaseAddress = new Uri(options.Value.Endpoint);
             })
-            .AddStandardResilienceHandler();
+            .AddStandardResilienceHandler(options =>
+            {
+                options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(1);
+                options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(2);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(3);
+            });
 
         services.AddSingleton<Tokenizer>(provider =>
         {

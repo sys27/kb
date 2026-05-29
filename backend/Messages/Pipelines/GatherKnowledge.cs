@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using Backend.Chats;
+using Backend.Llama;
 using Backend.Vectors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.VectorData;
@@ -12,18 +13,18 @@ public class GatherKnowledge : IConversationPipelineStep
     private readonly ILogger<GatherKnowledge> logger;
     private readonly KbDbContext dbContext;
     private readonly VectorStoreCollection<int, Embeddings> vectorCollection;
-    private readonly RerankClient rerankClient;
+    private readonly LlamaCppClient llamaCppClient;
 
     public GatherKnowledge(
         ILogger<GatherKnowledge> logger,
         KbDbContext dbContext,
         VectorStoreCollection<int, Embeddings> vectorCollection,
-        RerankClient rerankClient)
+        LlamaCppClient llamaCppClient)
     {
         this.logger = logger;
         this.dbContext = dbContext;
         this.vectorCollection = vectorCollection;
-        this.rerankClient = rerankClient;
+        this.llamaCppClient = llamaCppClient;
     }
 
     public async Task ExecuteAsync(ConversationPipelineContext context, CancellationToken cancellationToken = default)
@@ -211,7 +212,7 @@ public class GatherKnowledge : IConversationPipelineStep
         if (vectorSearchResults.Count <= 0)
             return;
 
-        var reranked = await rerankClient
+        var reranked = await llamaCppClient
             .Rerank(requestText, vectorSearchResults, 5, cancellationToken)
             .ToArrayAsync(cancellationToken);
 

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Backend.Chats.Requests;
 using Backend.Chats.Responses;
+using Backend.Llama;
 using Backend.Messages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
@@ -139,7 +140,7 @@ public static class ChatEndpoints
         group.MapPost("/{id:int}/generate-name", async (
                 int id,
                 KbDbContext context,
-                IChatClient chatClient,
+                LlamaCppClient chatClient,
                 CancellationToken cancellationToken) =>
             {
                 var chat = await context.Chats
@@ -173,9 +174,11 @@ public static class ChatEndpoints
                               {json}
                               """;
 
-                var chatMessage = new ChatMessage(ChatRole.User, prompt);
-                var response = await chatClient.GetResponseAsync(chatMessage, null, cancellationToken);
-                var generatedName = response.Text.Trim().Trim('"').Trim();
+                var generatedName = await chatClient.GetResponse(
+                    LlamaMessage.ForUser(prompt),
+                    GetResponseOptions.NoReasoning,
+                    cancellationToken);
+
                 if (string.IsNullOrWhiteSpace(generatedName))
                     generatedName = chat.Name;
 
@@ -190,7 +193,7 @@ public static class ChatEndpoints
         group.MapPost("/{id:int}/follow-ups", async (
                 int id,
                 KbDbContext context,
-                IChatClient chatClient,
+                LlamaCppClient chatClient,
                 CancellationToken cancellationToken) =>
             {
                 var chat = await context.Chats
@@ -232,9 +235,12 @@ public static class ChatEndpoints
                               {json}
                               """;
 
-                var chatMessage = new ChatMessage(ChatRole.User, prompt);
-                var response = await chatClient.GetResponseAsync(chatMessage, null, cancellationToken);
-                var followUps = JsonSerializer.Deserialize<List<string>>(response.Text)?.Take(3).ToList() ?? [];
+                var response = await chatClient.GetResponse(
+                    LlamaMessage.ForUser(prompt),
+                    GetResponseOptions.NoReasoning,
+                    cancellationToken);
+
+                var followUps = JsonSerializer.Deserialize<List<string>>(response)?.Take(3).ToList() ?? [];
 
                 return Results.Ok(new FollowUpQuestionsResponse(followUps));
             })
