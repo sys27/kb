@@ -69,13 +69,7 @@ public class GatherKnowledge : IConversationPipelineStep
                 - Use **Documents** as supporting material, not ground truth
 
                 If the context is not relevant, ignore it completely.
-
-                ---
-
-                ## User Request
                 """);
-
-            combinedMessage.AppendLine(requestText);
 
             chat.AddMessage(Message.ForUserContext(chat.Id, combinedMessage.ToString()));
         }

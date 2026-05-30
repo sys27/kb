@@ -1,6 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { FileText } from 'lucide-react';
 import { Badge } from '~/components/ui/badge';
+import {
+    Empty,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from '~/components/ui/empty';
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '~/components/ui/item';
 import { projectDocumentsOptions } from '~/services/project-documents';
 
@@ -48,9 +55,15 @@ export default function ProjectDocumentsList({ projectId }: ProjectDocumentsList
                     </Item>
                 ))
             ) : (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                    No documents found.
-                </div>
+                <Empty>
+                    <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                            <FileText />
+                        </EmptyMedia>
+                        <EmptyTitle>No Documents Yet</EmptyTitle>
+                        <EmptyDescription>No documents found.</EmptyDescription>
+                    </EmptyHeader>
+                </Empty>
             )}
         </div>
     );

@@ -1,12 +1,19 @@
-import type { Route } from './+types/home';
+import { Brain } from 'lucide-react';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '~/components/ui/empty';
 
-export function meta({}: Route.MetaArgs) {
-    return [
-        { title: 'New React Router App' },
-        { name: 'description', content: 'Welcome to React Router!' },
-    ];
+export function meta() {
+    return [{ title: 'KB' }, { name: 'description', content: 'Personal Knowledge Base' }];
 }
 
 export default function Home() {
-    return <div>Home</div>;
+    return (
+        <Empty className="min-h-screen">
+            <EmptyHeader>
+                <EmptyMedia className="size-16">
+                    <Brain className="size-8" />
+                </EmptyMedia>
+                <EmptyTitle className="text-lg">Knowledge Base</EmptyTitle>
+            </EmptyHeader>
+        </Empty>
+    );
 }

@@ -1,5 +1,6 @@
 import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
+import { useNavigate } from 'react-router';
 import z from 'zod';
 import { Button } from '~/components/ui/button';
 import {
@@ -30,21 +31,7 @@ let FormSchema = z.object({
 type FormType = z.infer<typeof FormSchema>;
 
 export default function ProjectNewDialog({ open, onOpenChange }: ProjectNewDialogProps) {
-    let form = useForm({
-        defaultValues: {
-            projectName: '',
-        } as FormType,
-        validators: {
-            onChange: FormSchema,
-        },
-        onSubmit: values => {
-            mutation.mutate(values.value, {
-                onSuccess: () => {
-                    onOpenChange(false);
-                },
-            });
-        },
-    });
+    let navigate = useNavigate();
     let mutation = useMutation({
         mutationFn: (project: FormType) => createProject(project.projectName),
         onMutate: async (newProject, context) => {
@@ -70,6 +57,22 @@ export default function ProjectNewDialog({ open, onOpenChange }: ProjectNewDialo
         },
         onSettled: (data, error, variables, onMutateResult, context) =>
             context.client.invalidateQueries(projectsOptions),
+    });
+    let form = useForm({
+        defaultValues: {
+            projectName: '',
+        } as FormType,
+        validators: {
+            onChange: FormSchema,
+        },
+        onSubmit: values => {
+            mutation.mutate(values.value, {
+                onSuccess: data => {
+                    onOpenChange(false);
+                    navigate(`/projects/${data.id}`);
+                },
+            });
+        },
     });
 
     return (

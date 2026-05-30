@@ -1,5 +1,6 @@
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router';
 import z from 'zod';
 import { Button } from '~/components/ui/button';
 import {
@@ -41,23 +42,8 @@ let FormSchema = z.object({
 type FormType = z.infer<typeof FormSchema>;
 
 export default function ChatNewDialog({ open, onOpenChange }: ChatNewDialogProps) {
+    let navigate = useNavigate();
     let { data: projects } = useQuery(projectsOptions);
-    let form = useForm({
-        defaultValues: {
-            chatName: '',
-            projectId: '0',
-        } as FormType,
-        validators: {
-            onChange: FormSchema,
-        },
-        onSubmit: values => {
-            mutation.mutate(values.value, {
-                onSuccess: () => {
-                    onOpenChange(false);
-                },
-            });
-        },
-    });
     let mutation = useMutation({
         mutationFn: (form: FormType) => {
             let projectId = form.projectId == '0' ? null : parseInt(form.projectId);
@@ -94,6 +80,23 @@ export default function ChatNewDialog({ open, onOpenChange }: ChatNewDialogProps
 
             if (data?.projectId)
                 context.client.invalidateQueries(projectChatsOptions(data.projectId));
+        },
+    });
+    let form = useForm({
+        defaultValues: {
+            chatName: '',
+            projectId: '0',
+        } as FormType,
+        validators: {
+            onChange: FormSchema,
+        },
+        onSubmit: values => {
+            mutation.mutate(values.value, {
+                onSuccess: data => {
+                    onOpenChange(false);
+                    navigate(`/chats/${data.id}`);
+                },
+            });
         },
     });
 

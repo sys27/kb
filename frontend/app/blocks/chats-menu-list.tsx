@@ -1,10 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, MessageCirclePlus } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
 import {
     SidebarGroup,
-    SidebarGroupAction,
     SidebarGroupContent,
     SidebarGroupLabel,
     SidebarMenu,
@@ -12,11 +10,9 @@ import {
 import { Skeleton } from '~/components/ui/skeleton';
 import { chatsOptions } from '~/services/chats';
 import ChatMenuItem from './chat-menu-item';
-import ChatNewDialog from './chat-new-dialog';
 
 export default function ChatsMenuList() {
     let { data: chats, isPending } = useQuery(chatsOptions);
-    let [openNewDialog, setOpenNewDialog] = useState(false);
 
     return (
         <Collapsible
@@ -41,14 +37,6 @@ export default function ChatsMenuList() {
                             Chats
                         </CollapsibleTrigger>
                     </SidebarGroupLabel>
-                    <SidebarGroupAction>
-                        <MessageCirclePlus onClick={() => setOpenNewDialog(true)} />
-
-                        <ChatNewDialog
-                            open={openNewDialog}
-                            onOpenChange={setOpenNewDialog}
-                        />
-                    </SidebarGroupAction>
                     <CollapsibleContent>
                         <SidebarGroupContent>
                             <SidebarMenu>
