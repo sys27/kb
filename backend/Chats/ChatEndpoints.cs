@@ -4,7 +4,6 @@ using Backend.Chats.Responses;
 using Backend.Llama;
 using Backend.Messages;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.AI;
 
 namespace Backend.Chats;
 

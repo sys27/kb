@@ -88,9 +88,17 @@ public class LlamaCppClient
         }
     }
 
-    public async IAsyncEnumerable<string> Rerank(
+    public IAsyncEnumerable<string> Rerank(
         string query,
         IReadOnlyList<string> documents,
+        int topK,
+        CancellationToken cancellationToken = default)
+        => Rerank(query, documents, x => x, topK, cancellationToken);
+
+    public async IAsyncEnumerable<T> Rerank<T>(
+        string query,
+        IReadOnlyList<T> documents,
+        Func<T, string> documentSelector,
         int topK,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
@@ -107,7 +115,7 @@ public class LlamaCppClient
         {
             model = llmOptions.RerankingModel,
             query,
-            documents,
+            documents = documents.Select(documentSelector),
         };
         var httpResponse = await httpClient.PostAsJsonAsync("/reranking", request, cancellationToken);
         httpResponse.EnsureSuccessStatusCode();

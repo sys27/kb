@@ -46,7 +46,8 @@ public static class MessageEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("SendMessage")
-            .WithSummary("Send a message to a chat");
+            .WithSummary("Send a message to a chat")
+            .WithRequestTimeout(TimeSpan.FromMinutes(5));
 
         return app;
     }

@@ -2,8 +2,8 @@ using System.Text.Json.Serialization;
 
 namespace Backend.Messages.Tools.WebSearch;
 
-public class SearchResponse
+internal sealed class SearxngResponse
 {
     [JsonPropertyName("results")]
-    public List<SearchResult> Results { get; set; } = [];
+    public List<SearxngResult> Results { get; set; } = [];
 }
