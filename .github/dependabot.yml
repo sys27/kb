@@ -6,6 +6,8 @@ updates:
       interval: "weekly"
     assignees:
       - "sys27"
+    cooldown:
+      default-days: 7
     groups:
       ef-core:
         patterns:
@@ -23,6 +25,8 @@ updates:
       interval: "weekly"
     assignees:
       - "sys27"
+    cooldown:
+      default-days: 7
     groups:
       react-router:
         patterns:
@@ -37,3 +41,5 @@ updates:
       interval: "weekly"
     assignees:
       - "sys27"
+    cooldown:
+      default-days: 7
