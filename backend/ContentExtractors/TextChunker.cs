@@ -1,9 +1,8 @@
 using Microsoft.ML.Tokenizers;
 
-namespace Backend.Ingestion;
+namespace Backend.ContentExtractors;
 
-// TODO: semantic chunking?
-public class TextChunker : IChunker
+public class TextChunker
 {
     private readonly Tokenizer tokenizer;
 

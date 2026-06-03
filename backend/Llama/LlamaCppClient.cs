@@ -88,20 +88,63 @@ public class LlamaCppClient
         }
     }
 
+    public async Task<EmbeddingResult<T>> Embedding<T>(T input, CancellationToken cancellationToken = default)
+    {
+        var embeddings = await Embeddings([input], cancellationToken);
+
+        return embeddings[0];
+    }
+
+    public async Task<IReadOnlyList<EmbeddingResult<T>>> Embeddings<T>(
+        IReadOnlyList<T> documents,
+        CancellationToken cancellationToken = default)
+    {
+        if (documents is null)
+            throw new ArgumentNullException(nameof(documents));
+
+        if (documents.Count == 0)
+            return [];
+
+        var request = new
+        {
+            model = llmOptions.EmbeddingModel,
+            input = documents,
+        };
+        var httpResponse = await httpClient.PostAsJsonAsync("/embeddings", request, cancellationToken);
+        httpResponse.EnsureSuccessStatusCode();
+
+        var response = await httpResponse.Content.ReadFromJsonAsync<EmbeddingsResponse[]>(cancellationToken);
+        if (response is null)
+            throw new InvalidOperationException("No embeddings returned from Llama");
+
+        if (response.Length != documents.Count)
+            throw new InvalidOperationException("Response length does not match input length");
+
+        var embeddings = response
+            .Select(x => new EmbeddingResult<T>(
+                documents[x.Index],
+                x.Embedding.FirstOrDefault()?.Select(e => (float)e).ToArray() ?? []))
+            .ToArray();
+
+        return embeddings;
+    }
+
     public IAsyncEnumerable<string> Rerank(
         string query,
         IReadOnlyList<string> documents,
-        int topK,
+        RerankOptions? options = null,
         CancellationToken cancellationToken = default)
-        => Rerank(query, documents, x => x, topK, cancellationToken);
+        => Rerank(query, documents, x => x, options, cancellationToken);
 
     public async IAsyncEnumerable<T> Rerank<T>(
         string query,
         IReadOnlyList<T> documents,
         Func<T, string> documentSelector,
-        int topK,
+        RerankOptions? options = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        options ??= new RerankOptions();
+
         if (string.IsNullOrWhiteSpace(query))
             throw new ArgumentException("Query cannot be null or whitespace", nameof(query));
 
@@ -124,11 +167,10 @@ public class LlamaCppClient
         if (rerankResponse is null)
             yield break;
 
-        // TODO: config?
         var topDocuments = rerankResponse.Results
-            .Where(x => x.RelevanceScore >= 0.5)
+            .Where(x => x.RelevanceScore >= options.RelevanceScoreThreshold)
             .OrderByDescending(x => x.RelevanceScore)
-            .Take(topK);
+            .Take(options.TopK);
 
         foreach (var document in topDocuments)
             if (document.Index >= 0 && document.Index < documents.Count)
@@ -138,6 +180,8 @@ public class LlamaCppClient
     private sealed record CompletionResponse(ChoicesResponse[] Choices);
 
     private sealed record ChoicesResponse(LlamaMessage Message);
+
+    private sealed record EmbeddingsResponse(int Index, double[][] Embedding);
 
     private sealed record RerankResponse(IReadOnlyList<RerankResult> Results);
 

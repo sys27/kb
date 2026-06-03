@@ -1,5 +1,5 @@
-using Backend.Messages.Tools.WebFetch;
 using Backend.Messages.Tools.WebSearch;
+using Backend.Messages.Tools.WebSearch.FetchHandlers;
 using Microsoft.Extensions.Options;
 
 namespace Backend.Messages.Pipelines;
@@ -46,7 +46,7 @@ public static class ConversationPipelineExtensions
         services
             .AddHttpClient<IWebFetchHandler, DefaultHandler>()
             .AddStandardResilienceHandler();
-        services.AddTransient<WebFetchService>();
+        services.AddTransient<WebFetchHandlerFactory>();
 
         return services;
     }

@@ -1,8 +1,10 @@
 using System.ClientModel;
 using Backend.Chats;
+using Backend.ContentExtractors;
 using Backend.Ingestion;
 using Backend.Llama;
 using Backend.Vectors;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.AI;
@@ -124,9 +126,12 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<DocumentDiscoveryBackgroundService>();
         services.AddHostedService<IngestionBackgroundService>();
 
+        services.AddSingleton<IContentTypeProvider, FileExtensionContentTypeProvider>();
+        services.AddSingleton<PlainTextContentExtractor>();
+        services.AddSingleton<HtmlContentExtractor>();
+        services.AddSingleton<PdfContentExtractor>();
+        services.AddSingleton<ContentExtractorFactory>();
         services.AddSingleton<TextChunker>();
-        services.AddSingleton<MarkdownChunker>();
-        services.AddSingleton<ChunkerFactory>();
 
         services.AddSingleton<IValidateOptions<SummarizationOptions>, SummarizationOptions>();
         services.Configure<SummarizationOptions>(configuration.GetSection(SummarizationOptions.Section));

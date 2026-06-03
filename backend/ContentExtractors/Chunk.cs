@@ -1,4 +1,4 @@
-namespace Backend.Ingestion;
+namespace Backend.ContentExtractors;
 
 public readonly record struct Chunk(int Start, int Length)
 {

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
-using System.Text;
+using Backend.ContentExtractors;
 using Backend.Vectors;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
@@ -12,21 +13,27 @@ public class IngestionBackgroundService : BackgroundService
     private readonly IngestionOptions options;
     private readonly ILogger<IngestionBackgroundService> logger;
     private readonly IServiceScopeFactory scopeFactory;
+    private readonly IContentTypeProvider contentTypeProvider;
     private readonly VectorStoreCollection<int, Embeddings> vectorCollection;
-    private readonly ChunkerFactory chunkerFactory;
+    private readonly TextChunker chunker;
+    private readonly ContentExtractorFactory contentExtractorFactory;
 
     public IngestionBackgroundService(
         IOptions<IngestionOptions> options,
         ILogger<IngestionBackgroundService> logger,
         IServiceScopeFactory scopeFactory,
+        IContentTypeProvider contentTypeProvider,
         VectorStoreCollection<int, Embeddings> vectorCollection,
-        ChunkerFactory chunkerFactory)
+        TextChunker chunker,
+        ContentExtractorFactory contentExtractorFactory)
     {
         this.options = options.Value;
         this.logger = logger;
         this.scopeFactory = scopeFactory;
+        this.contentTypeProvider = contentTypeProvider;
         this.vectorCollection = vectorCollection;
-        this.chunkerFactory = chunkerFactory;
+        this.chunker = chunker;
+        this.contentExtractorFactory = contentExtractorFactory;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -60,10 +67,6 @@ public class IngestionBackgroundService : BackgroundService
                 try
                 {
                     await vectorCollection.DeleteAsync(document.DocumentChunks.Select(x => x.Id), stoppingToken);
-
-                    foreach (var documentChunk in document.DocumentChunks)
-                        dbContext.Entry(documentChunk).State = EntityState.Detached;
-
                     document.DocumentChunks.Clear();
 
                     var fileInfo = new FileInfo(filePath);
@@ -73,10 +76,12 @@ public class IngestionBackgroundService : BackgroundService
                     document.Hash = hash;
 
                     stream.Position = 0;
-                    using var streamReader = new StreamReader(stream, Encoding.UTF8);
-                    var content = await streamReader.ReadToEndAsync(stoppingToken);
+                    if (!contentTypeProvider.TryGetContentType(filePath, out var contentType))
+                        contentType = "text/plain";
 
-                    var chunker = chunkerFactory.Create(filePath);
+                    var extractor = contentExtractorFactory.Create(contentType);
+                    var content = await extractor.Extract(filePath, stream, stoppingToken);
+
                     var chunks = chunker.Split(content);
                     foreach (var chunk in chunks)
                     {

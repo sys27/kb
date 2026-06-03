@@ -15,6 +15,7 @@ public partial class DocumentDiscoveryBackgroundService : BackgroundService
     [
         ".txt",
         ".md",
+        ".pdf",
     ];
 
     [GeneratedRegex(@"project-(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]

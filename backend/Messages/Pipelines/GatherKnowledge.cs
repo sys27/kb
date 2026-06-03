@@ -207,7 +207,7 @@ public class GatherKnowledge : IConversationPipelineStep
             return;
 
         var reranked = await llamaCppClient
-            .Rerank(requestText, vectorSearchResults, 5, cancellationToken)
+            .Rerank(requestText, vectorSearchResults, new RerankOptions { TopK = 5 }, cancellationToken)
             .ToArrayAsync(cancellationToken);
 
         if (reranked.Length <= 0)
@@ -230,7 +230,6 @@ public class GatherKnowledge : IConversationPipelineStep
     {
         var vectorOptions = new VectorSearchOptions<Embeddings>
         {
-            ScoreThreshold = 0.5,
             Filter = e => e.ProjectId == projectId &&
                           e.SourceType == (int)EmbeddingSourceType.DocumentChunk,
         };

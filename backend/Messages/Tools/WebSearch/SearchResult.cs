@@ -1,3 +1,3 @@
 namespace Backend.Messages.Tools.WebSearch;
 
-public record SearchResult(string Title, string Url, string? Content);
+public record SearchResult(string Url, string Title, IEnumerable<string> Chunks);

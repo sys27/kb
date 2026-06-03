@@ -1,5 +1,4 @@
 using Backend.Chats;
-using Backend.Messages.Tools.WebFetch;
 using Backend.Messages.Tools.WebSearch;
 using Microsoft.Extensions.AI;
 
@@ -9,13 +8,11 @@ public class SendRequest : IConversationPipelineStep
 {
     private readonly IChatClient chatClient;
     private readonly WebSearchService webSearchService;
-    private readonly WebFetchService webFetchService;
 
-    public SendRequest(IChatClient chatClient, WebSearchService webSearchService, WebFetchService webFetchService)
+    public SendRequest(IChatClient chatClient, WebSearchService webSearchService)
     {
         this.chatClient = chatClient;
         this.webSearchService = webSearchService;
-        this.webFetchService = webFetchService;
     }
 
     public Task ExecuteAsync(ConversationPipelineContext context, CancellationToken cancellationToken = default)
@@ -57,10 +54,7 @@ public class SendRequest : IConversationPipelineStep
 
             1. web_search(query)
                - Use to find relevant web pages.
-               - Returns a list of results with title, url, and snippet.
-
-            2. web_fetch(url)
-               - Use to retrieve and read full content of selected web pages.
+               - Returns a list of results with title, url, and chunks (extracted relevant text).
 
             Use web_search when:
             - The question requires up-to-date information
@@ -76,20 +70,8 @@ public class SendRequest : IConversationPipelineStep
             - Prefer keywords over full sentences
             - Include technical terms when relevant
 
-            After web_search:
-            - Review results carefully
-            - Select the most relevant and reliable URLs
-            - Avoid duplicates or low-quality sources
-            - Prefer authoritative or specific sources
-
-            Use web_fetch only after web_search:
-            - Fetch at most 3 URLs
-            - Only fetch pages that are clearly relevant
-            - Do not fetch all results
-
             You may:
-            - Perform at most 2 web_search calls
-            - Perform at most 2 web_fetch calls
+            - Perform at most 3 web_search calls
 
             If results are insufficient:
             - Refine the query and try again
@@ -112,12 +94,5 @@ public class SendRequest : IConversationPipelineStep
                 webSearchService,
                 "web_search",
                 "Search the web for information on the given topic."));
-
-        chatOptions.Tools!.Add(
-            AIFunctionFactory.Create(
-                typeof(WebFetchService).GetMethod(nameof(WebFetchService.Fetch))!,
-                webFetchService,
-                "web_fetch",
-                "Fetch the content of a web page at the given URL."));
     }
 }

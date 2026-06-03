@@ -8,9 +8,11 @@ public class WebSearchOptions : IValidateOptions<WebSearchOptions>
 
     public string? BaseUrl { get; set; }
 
-    public int MaxResults { get; set; } = 10;
+    public int MaxResults { get; set; }
 
-    public int RerankTopK { get; set; } = 3;
+    public int RerankTopK { get; set; }
+
+    public double SimilarityThreshold { get; set; }
 
     public ValidateOptionsResult Validate(string? name, WebSearchOptions options)
     {
@@ -24,6 +26,9 @@ public class WebSearchOptions : IValidateOptions<WebSearchOptions>
 
         if (options.RerankTopK <= 0)
             failures.Add("RerankTopK must be greater than 0");
+
+        if (options.SimilarityThreshold is < 0 or > 1)
+            failures.Add("SimilarityThreshold must be between 0 and 1");
 
         return failures.Count > 0
             ? ValidateOptionsResult.Fail(failures)

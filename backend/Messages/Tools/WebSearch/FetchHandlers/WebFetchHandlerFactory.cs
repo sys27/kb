@@ -1,13 +1,13 @@
-namespace Backend.Messages.Tools.WebFetch;
+namespace Backend.Messages.Tools.WebSearch.FetchHandlers;
 
-public class WebFetchService
+public class WebFetchHandlerFactory
 {
     private readonly IEnumerable<IWebFetchHandler> handlers;
 
-    public WebFetchService(IEnumerable<IWebFetchHandler> handlers)
+    public WebFetchHandlerFactory(IEnumerable<IWebFetchHandler> handlers)
         => this.handlers = handlers;
 
-    public async Task<string?> Fetch(string url, CancellationToken cancellationToken = default)
+    public IWebFetchHandler GetHandler(string url)
     {
         var uri = new Uri(url);
         var candidate = handlers
@@ -21,6 +21,6 @@ public class WebFetchService
             .Where(x => x.BestMatchLength is not null)
             .MaxBy(x => x.BestMatchLength);
 
-        return await candidate!.Handler.Fetch(url, cancellationToken);
+        return candidate!.Handler;
     }
 }
