@@ -21,20 +21,43 @@ public class SummarizationBackgroundService : BackgroundService
         """
         Analyze the following conversation and produce a structured summary.
 
-        Rules:
-        - Be concise and information-dense
-        - Ignore small talk
-        - Extract only meaningful technical or conceptual content
-        - Do not invent information
+        Important source rules:
+
+        - Be concise and information-dense.
+        - Ignore small talk.
+        - The conversation contains messages from both User and Assistant.
+        - Assistant messages are proposals, explanations, or suggestions.
+        - Do NOT treat Assistant statements as facts, decisions, or user preferences unless the User explicitly agrees with them, confirms them, adopts them, or acts on them.
+        - When extracting facts, decisions, and userPreferences, prioritize information that originated from the User.
+        - If something was only suggested by the Assistant and never accepted by the User, do not include it.
+        - Output JSON only. Do not include any other text.
 
         Fields:
-        - summary: short paragraph (2-5 sentences)
-        - topics: 3-8 concise tags
-        - facts: list of important facts or insights
-        - decisions: only if a clear decision was made
-        - userPreferences: stable user facts, represent long-term preferences, constraints, or goals
 
-        Output in JSON format with the following structure:
+        summary:
+        - High-level summary of what was discussed.
+        - May reference both User and Assistant messages.
+
+        topics:
+        - Main discussion topics.
+
+        facts:
+        - Only facts explicitly provided by the User.
+        - Include confirmed outcomes only if the User explicitly acknowledged them.
+        - Exclude Assistant explanations, recommendations, assumptions, and generated content.
+
+        decisions:
+        - Include only decisions explicitly made by the User.
+        - A decision requires evidence that the User chose, adopted, rejected, or committed to something.
+        - Do not treat Assistant recommendations as decisions.
+
+        userPreferences:
+        - Include only stable preferences, constraints, goals, habits, or recurring requirements explicitly stated by the User.
+        - Do not infer preferences from Assistant suggestions.
+        - Ignore temporary intentions unless they indicate a long-term pattern.
+
+        Output JSON:
+        ```
         {{
           "summary": "string",
           "topics": ["string"],
@@ -45,9 +68,12 @@ public class SummarizationBackgroundService : BackgroundService
           }}],
           "userPreferences": ["string"]
         }}
+        ```
 
         Conversation:
+        ```
         {0}
+        ```
         """;
 
     public SummarizationBackgroundService(
