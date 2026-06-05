@@ -1,5 +1,6 @@
 using Backend;
 using Backend.Chats;
+using Backend.Export;
 using Backend.Messages;
 using Backend.Messages.Pipelines;
 using Backend.Projects;
@@ -35,7 +36,8 @@ app.MapScalarApiReference();
 app.MapGroup("/api")
     .MapChatEndpoints()
     .MapMessageEndpoints()
-    .MapProjectEndpoints();
+    .MapProjectEndpoints()
+    .MapExportEndpoints();
 
 if (!app.Environment.IsDevelopment())
 {

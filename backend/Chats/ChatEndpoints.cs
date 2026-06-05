@@ -98,7 +98,7 @@ public static class ChatEndpoints
             .WithName("DeleteChat")
             .WithSummary("Delete a chat by id");
 
-        group.MapPost("/import", async (
+        group.MapPost("/import-gpt", async (
                 IFormFile? file,
                 ILoggerFactory loggerFactory,
                 ChatGptImporter importer,
@@ -133,7 +133,7 @@ public static class ChatEndpoints
             .ProducesProblem(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .WithName("ImportChats")
+            .WithName("ImportChatsFromGpt")
             .WithSummary("Import chats from a file");
 
         group.MapPost("/{id:int}/generate-name", async (
@@ -158,7 +158,7 @@ public static class ChatEndpoints
                 var conversation = new Conversation(
                     chat.Messages
                         .OrderBy(x => x.Id)
-                        .Select(m => new Message(
+                        .Select(m => new ConversationMessage(
                             m.MessageTypeId == MessageType.UserRequestId ? "user" : "assistant",
                             m.Text))
                         .ToList());
@@ -220,7 +220,7 @@ public static class ChatEndpoints
                 var conversation = new Conversation(
                     messages
                         .Skip(lastUserMessageIndex)
-                        .Select(m => new Message(
+                        .Select(m => new ConversationMessage(
                             m.MessageTypeId == MessageType.UserRequestId ? "user" : "assistant",
                             m.Text))
                         .ToList());
@@ -252,7 +252,7 @@ public static class ChatEndpoints
         return app;
     }
 
-    private record Conversation(List<Message> Messages);
+    private record Conversation(List<ConversationMessage> Messages);
 
-    private record Message(string Role, string Text);
+    private record ConversationMessage(string Role, string Text);
 }
