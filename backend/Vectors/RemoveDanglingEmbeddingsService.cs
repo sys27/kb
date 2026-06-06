@@ -1,3 +1,4 @@
+using Backend.Knowledge;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -39,23 +40,23 @@ public partial class RemoveDanglingEmbeddingsService : BackgroundService
                     $"""
                      SELECT e.Id
                      FROM Embeddings e
-                     WHERE (e.SourceType = {(int)EmbeddingSourceType.DocumentChunk}
+                     WHERE (e.SourceType = {(int)KnowledgeSource.DocumentChunk}
                          AND NOT EXISTS (SELECT 1
                                          FROM DocumentChunks dc
                                          WHERE dc.Id = e.SourceId))
-                         OR (e.SourceType = {(int)EmbeddingSourceType.ChatSummary}
+                         OR (e.SourceType = {(int)KnowledgeSource.ChatSummary}
                              AND NOT EXISTS (SELECT 1
                                              FROM Chats c
                                              WHERE c.Id = e.SourceId))
-                         OR (e.SourceType = {(int)EmbeddingSourceType.ChatFact}
+                         OR (e.SourceType = {(int)KnowledgeSource.ChatFact}
                              AND NOT EXISTS (SELECT 1
                                              FROM ChatFacts cf
                                              WHERE cf.Id = e.SourceId))
-                         OR (e.SourceType = {(int)EmbeddingSourceType.ChatDecision}
+                         OR (e.SourceType = {(int)KnowledgeSource.ChatDecision}
                              AND NOT EXISTS (SELECT 1
                                              FROM ChatDecisions CD
                                              WHERE CD.Id = e.SourceId))
-                         OR (e.SourceType = {(int)EmbeddingSourceType.ChatUserPreference}
+                         OR (e.SourceType = {(int)KnowledgeSource.ChatUserPreference}
                              AND NOT EXISTS (SELECT 1
                                              FROM ChatUserPreferences cup
                                              WHERE cup.Id = e.SourceId))

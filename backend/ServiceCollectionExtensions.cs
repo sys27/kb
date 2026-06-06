@@ -2,6 +2,7 @@ using System.ClientModel;
 using Backend.Chats;
 using Backend.ContentExtractors;
 using Backend.Ingestion;
+using Backend.Knowledge;
 using Backend.Llama;
 using Backend.Vectors;
 using Microsoft.AspNetCore.StaticFiles;
@@ -126,10 +127,14 @@ public static class ServiceCollectionExtensions
         services.AddHostedService<DocumentDiscoveryBackgroundService>();
         services.AddHostedService<IngestionBackgroundService>();
 
-        services.AddSingleton<IContentTypeProvider, FileExtensionContentTypeProvider>();
-        services.AddSingleton<PlainTextContentExtractor>();
+        services.AddSingleton<FileExtensionContentTypeProvider>();
+        services.AddSingleton<IContentTypeProvider, ContentTypeProvider>();
+
+        services.AddSingleton<EpubContentExtractor>();
         services.AddSingleton<HtmlContentExtractor>();
+        services.AddSingleton<MarkdownContentExtractor>();
         services.AddSingleton<PdfContentExtractor>();
+        services.AddSingleton<PlainTextContentExtractor>();
         services.AddSingleton<ContentExtractorFactory>();
         services.AddSingleton<TextChunker>();
 
@@ -140,6 +145,13 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IValidateOptions<RemoveDanglingEmbeddingsOptions>, RemoveDanglingEmbeddingsOptions>();
         services.Configure<RemoveDanglingEmbeddingsOptions>(configuration.GetSection(RemoveDanglingEmbeddingsOptions.Section));
         services.AddHostedService<RemoveDanglingEmbeddingsService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddKnowledge(this IServiceCollection services)
+    {
+        services.AddScoped<KnowledgeService>();
 
         return services;
     }

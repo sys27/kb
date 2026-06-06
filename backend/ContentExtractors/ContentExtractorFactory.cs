@@ -10,8 +10,10 @@ public class ContentExtractorFactory
     public IContentExtractor Create(string contentType)
         => contentType switch
         {
-            "text/html" => serviceProvider.GetRequiredService<HtmlContentExtractor>(),
+            "application/epub+zip" => serviceProvider.GetRequiredService<EpubContentExtractor>(),
             "application/pdf" => serviceProvider.GetRequiredService<PdfContentExtractor>(),
+            "text/markdown" => serviceProvider.GetRequiredService<MarkdownContentExtractor>(),
+            "text/html" => serviceProvider.GetRequiredService<HtmlContentExtractor>(),
 
             _ => serviceProvider.GetRequiredService<PlainTextContentExtractor>(),
         };

@@ -21,6 +21,7 @@ builder.Services.AddDatabase(builder.Configuration, builder.Environment);
 builder.Services.AddAi(builder.Configuration);
 builder.Services.AddIngestion(builder.Configuration);
 builder.Services.AddConversationPipeline(builder.Configuration);
+builder.Services.AddKnowledge();
 
 builder.Services.AddSpaStaticFiles(options => options.RootPath = "wwwroot");
 

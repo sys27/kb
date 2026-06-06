@@ -83,9 +83,10 @@ public class WebSearchService
         {
             var extractor = contentExtractorFactory.Create(contentType);
             var content = await extractor.Extract(url, stream, cancellationToken);
-
-            var chunks = textChunker.Split(content);
-            var chunkedContent = chunks.Select(x => content.Substring(x.Start, x.Length)).ToArray();
+            var chunkedContent = content.Sections
+                .SelectMany(x => textChunker.Split(x.Content).Select(c => (x.Content, Chunk: c)))
+                .Select(x => x.Content.Substring(x.Chunk.Start, x.Chunk.Length))
+                .ToArray();
 
             var similarChunks = new List<string>();
             var (_, queryEmbedding) = await llamaCppClient.Embedding(query, cancellationToken);

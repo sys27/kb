@@ -1,30 +1,26 @@
-using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Backend.Chats;
-using Backend.Llama;
-using Backend.Vectors;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.VectorData;
+using Backend.Knowledge;
 
 namespace Backend.Messages.Pipelines;
 
 public class GatherKnowledge : IConversationPipelineStep
 {
-    private readonly ILogger<GatherKnowledge> logger;
-    private readonly KbDbContext dbContext;
-    private readonly VectorStoreCollection<int, Embeddings> vectorCollection;
-    private readonly LlamaCppClient llamaCppClient;
+    private readonly KnowledgeService knowledgeService;
+    private readonly JsonSerializerOptions jsonOptions;
 
-    public GatherKnowledge(
-        ILogger<GatherKnowledge> logger,
-        KbDbContext dbContext,
-        VectorStoreCollection<int, Embeddings> vectorCollection,
-        LlamaCppClient llamaCppClient)
+    public GatherKnowledge(KnowledgeService knowledgeService)
     {
-        this.logger = logger;
-        this.dbContext = dbContext;
-        this.vectorCollection = vectorCollection;
-        this.llamaCppClient = llamaCppClient;
+        this.knowledgeService = knowledgeService;
+        this.jsonOptions = new JsonSerializerOptions(JsonSerializerOptions.Web)
+        {
+            Converters =
+            {
+                new JsonStringEnumConverter()
+            }
+        };
     }
 
     public async Task ExecuteAsync(ConversationPipelineContext context, CancellationToken cancellationToken = default)
@@ -81,27 +77,22 @@ public class GatherKnowledge : IConversationPipelineStep
         StringBuilder combinedMessage,
         CancellationToken cancellationToken)
     {
-        var vectorOptions = new VectorSearchOptions<Embeddings>
-        {
-            ScoreThreshold = 0.5,
-            Filter = e => e.ProjectId == chat.ProjectId &&
-                          e.SourceType == (int)EmbeddingSourceType.ChatUserPreference,
-        };
-        var vectorSearchResults = await vectorCollection
-            .SearchAsync(requestText, 3, vectorOptions, cancellationToken)
-            .ToListAsync(cancellationToken);
+        var preferences = await knowledgeService.Search(
+            KnowledgeSource.ChatUserPreference,
+            requestText,
+            chat.ProjectId,
+            cancellationToken);
 
-        if (vectorSearchResults.Count > 0)
-        {
-            combinedMessage.AppendLine("### User Profile (long-term preferences, may be outdated)");
+        if (preferences.Count == 0)
+            return;
 
-            foreach (var result in vectorSearchResults)
-            {
-                var preference = await dbContext.GetEmbeddingsContent(result.Record, cancellationToken);
+        var json = JsonSerializer.Serialize(preferences, JsonSerializerOptions.Web);
 
-                combinedMessage.Append("- ").AppendLine(preference);
-            }
-        }
+        combinedMessage
+            .AppendLine("### User Profile (long-term preferences, may be outdated)")
+            .AppendLine("```")
+            .AppendLine(json)
+            .AppendLine("```");
     }
 
     private async Task AddFacts(
@@ -110,27 +101,22 @@ public class GatherKnowledge : IConversationPipelineStep
         StringBuilder combinedMessage,
         CancellationToken cancellationToken)
     {
-        var vectorOptions = new VectorSearchOptions<Embeddings>
-        {
-            ScoreThreshold = 0.5,
-            Filter = e => e.ProjectId == chat.ProjectId &&
-                          e.SourceType == (int)EmbeddingSourceType.ChatFact,
-        };
-        var vectorSearchResults = await vectorCollection
-            .SearchAsync(requestText, 3, vectorOptions, cancellationToken)
-            .ToListAsync(cancellationToken);
+        var facts = await knowledgeService.Search(
+            KnowledgeSource.ChatFact,
+            requestText,
+            chat.ProjectId,
+            cancellationToken);
 
-        if (vectorSearchResults.Count > 0)
-        {
-            combinedMessage.AppendLine("### Facts (high confidence, atomic)");
+        if (facts.Count == 0)
+            return;
 
-            foreach (var result in vectorSearchResults)
-            {
-                var fact = await dbContext.GetEmbeddingsContent(result.Record, cancellationToken);
+        var json = JsonSerializer.Serialize(facts, JsonSerializerOptions.Web);
 
-                combinedMessage.Append("- ").AppendLine(fact);
-            }
-        }
+        combinedMessage
+            .AppendLine("### Facts (high confidence, atomic)")
+            .AppendLine("```")
+            .AppendLine(json)
+            .AppendLine("```");
     }
 
     private async Task AddDecisions(
@@ -139,27 +125,22 @@ public class GatherKnowledge : IConversationPipelineStep
         StringBuilder combinedMessage,
         CancellationToken cancellationToken)
     {
-        var vectorOptions = new VectorSearchOptions<Embeddings>
-        {
-            ScoreThreshold = 0.5,
-            Filter = e => e.ProjectId == chat.ProjectId &&
-                          e.SourceType == (int)EmbeddingSourceType.ChatDecision,
-        };
-        var vectorSearchResults = await vectorCollection
-            .SearchAsync(requestText, 3, vectorOptions, cancellationToken)
-            .ToListAsync(cancellationToken);
+        var decisions = await knowledgeService.Search(
+            KnowledgeSource.ChatDecision,
+            requestText,
+            chat.ProjectId,
+            cancellationToken);
 
-        if (vectorSearchResults.Count > 0)
-        {
-            combinedMessage.AppendLine("### Decisions (high confidence, atomic)");
+        if (decisions.Count == 0)
+            return;
 
-            foreach (var result in vectorSearchResults)
-            {
-                var decision = await dbContext.GetEmbeddingsContent(result.Record, cancellationToken);
+        var json = JsonSerializer.Serialize(decisions, JsonSerializerOptions.Web);
 
-                combinedMessage.Append("- ").AppendLine(decision);
-            }
-        }
+        combinedMessage
+            .AppendLine("### Decisions (high confidence, atomic)")
+            .AppendLine("```")
+            .AppendLine(json)
+            .AppendLine("```");
     }
 
     private async Task AddSummaries(
@@ -168,27 +149,22 @@ public class GatherKnowledge : IConversationPipelineStep
         StringBuilder combinedMessage,
         CancellationToken cancellationToken)
     {
-        var vectorOptions = new VectorSearchOptions<Embeddings>
-        {
-            ScoreThreshold = 0.5,
-            Filter = e => e.ProjectId == chat.ProjectId &&
-                          e.SourceType == (int)EmbeddingSourceType.ChatSummary,
-        };
-        var vectorSearchResults = await vectorCollection
-            .SearchAsync(requestText, 3, vectorOptions, cancellationToken)
-            .ToListAsync(cancellationToken);
+        var summaries = await knowledgeService.Search(
+            KnowledgeSource.ChatSummary,
+            requestText,
+            chat.ProjectId,
+            cancellationToken);
 
-        if (vectorSearchResults.Count > 0)
-        {
-            combinedMessage.AppendLine("### Summary (general overview, may be incomplete)");
+        if (summaries.Count == 0)
+            return;
 
-            foreach (var result in vectorSearchResults)
-            {
-                var summary = await dbContext.GetEmbeddingsContent(result.Record, cancellationToken);
+        var json = JsonSerializer.Serialize(summaries, JsonSerializerOptions.Web);
 
-                combinedMessage.Append("- ").AppendLine(summary);
-            }
-        }
+        combinedMessage
+            .AppendLine("### Summary (general overview, may be incomplete)")
+            .AppendLine("```")
+            .AppendLine(json)
+            .AppendLine("```");
     }
 
     private async Task AddDocuments(
@@ -197,102 +173,21 @@ public class GatherKnowledge : IConversationPipelineStep
         StringBuilder combinedMessage,
         CancellationToken cancellationToken)
     {
-        var vectorSearchResults = await VectorSearch(chat.ProjectId, requestText, cancellationToken)
-            .Concat(BestMatching25Search(chat.ProjectId, requestText))
-            .DistinctBy(x => x.Id)
-            .Select(x => x.Content)
-            .ToListAsync(cancellationToken);
+        var documents = await knowledgeService.Search(
+            KnowledgeSource.DocumentChunk,
+            requestText,
+            chat.ProjectId,
+            cancellationToken);
 
-        if (vectorSearchResults.Count <= 0)
+        if (documents.Count == 0)
             return;
 
-        var reranked = await llamaCppClient
-            .Rerank(requestText, vectorSearchResults, new RerankOptions { TopK = 5 }, cancellationToken)
-            .ToArrayAsync(cancellationToken);
+        var json = JsonSerializer.Serialize(documents, jsonOptions);
 
-        if (reranked.Length <= 0)
-            return;
-
-        combinedMessage.AppendLine("### Related Documents (external knowledge, may be partial or noisy)");
-
-        for (var i = 0; i < reranked.Length; i++)
-            combinedMessage
-                .Append('[')
-                .Append(i + 1)
-                .Append("] ")
-                .AppendLine(reranked[i]);
+        combinedMessage
+            .AppendLine("### Related Documents (external knowledge, may be partial or noisy)")
+            .AppendLine("```")
+            .AppendLine(json)
+            .AppendLine("```");
     }
-
-    private async IAsyncEnumerable<DocumentSearchResult> VectorSearch(
-        int? projectId,
-        string query,
-        [EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        var vectorOptions = new VectorSearchOptions<Embeddings>
-        {
-            Filter = e => e.ProjectId == projectId &&
-                          e.SourceType == (int)EmbeddingSourceType.DocumentChunk,
-        };
-        var vectorSearchResults = vectorCollection.SearchAsync(query, 10, vectorOptions, cancellationToken);
-
-        await foreach (var result in vectorSearchResults)
-        {
-            var summary = await dbContext.GetEmbeddingsContent(result.Record, cancellationToken);
-            if (summary is null)
-            {
-                logger.LogWarning("No content found for embeddings record {RecordId}", result.Record.Id);
-                continue;
-            }
-
-            yield return new DocumentSearchResult(result.Record.Id, summary);
-        }
-    }
-
-    private static string EscapeFtsQuery(string query)
-    {
-        if (string.IsNullOrWhiteSpace(query))
-            return "\"\"";
-
-        var sanitized = query
-            .Replace("\"", " ")
-            .Replace("'", " ")
-            .Replace("*", " ")
-            .Replace("(", " ")
-            .Replace(")", " ")
-            .Replace("^", " ")
-            .Replace("-", " ")
-            .Replace("+", " ")
-            .Replace(":", " ")
-            .Trim();
-
-        if (string.IsNullOrWhiteSpace(sanitized))
-            return "\"\"";
-
-        var tokens = sanitized
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-            .Select(t => $"\"{t}\"");
-
-        return string.Join(" ", tokens);
-    }
-
-    private IAsyncEnumerable<DocumentSearchResult> BestMatching25Search(int? projectId, string query)
-    {
-        var escapedQuery = EscapeFtsQuery(query);
-
-        return dbContext.Database
-            .SqlQuery<DocumentSearchResult>(
-                $"""
-                 SELECT FTI.rowid AS Id, FTI.Content AS Content
-                 FROM FullTextIndex AS FTI
-                          INNER JOIN DocumentChunks AS DC ON DC.Id = FTI.rowid
-                          INNER JOIN Documents AS D ON D.Id = DC.DocumentId
-                 WHERE ({projectId} IS NULL OR D.ProjectId = {projectId})
-                   AND FullTextIndex MATCH {escapedQuery}
-                 ORDER BY bm25(FullTextIndex)
-                 LIMIT 10
-                 """)
-            .AsAsyncEnumerable();
-    }
-
-    private record DocumentSearchResult(int Id, string Content);
 }

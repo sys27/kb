@@ -70,6 +70,7 @@ namespace Backend.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Title = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
                     LastModifiedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Hash = table.Column<byte[]>(type: "BLOB", maxLength: 32, nullable: false),
                     Status = table.Column<string>(type: "TEXT", nullable: false, defaultValue: "Pending"),
@@ -196,6 +197,26 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "DocumentSections",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Header = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    DocumentId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DocumentSections", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DocumentSections_Documents_DocumentId",
+                        column: x => x.DocumentId,
+                        principalTable: "Documents",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "DocumentChunks",
                 columns: table => new
                 {
@@ -204,15 +225,15 @@ namespace Backend.Migrations
                     Content = table.Column<string>(type: "TEXT", nullable: false),
                     Start = table.Column<int>(type: "INTEGER", nullable: false),
                     Length = table.Column<int>(type: "INTEGER", nullable: false),
-                    DocumentId = table.Column<int>(type: "INTEGER", nullable: false)
+                    DocumentSectionId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_DocumentChunks", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_DocumentChunks_Documents_DocumentId",
-                        column: x => x.DocumentId,
-                        principalTable: "Documents",
+                        name: "FK_DocumentChunks_DocumentSections_DocumentSectionId",
+                        column: x => x.DocumentSectionId,
+                        principalTable: "DocumentSections",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -255,14 +276,19 @@ namespace Backend.Migrations
                 column: "ChatId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DocumentChunks_DocumentId",
+                name: "IX_DocumentChunks_DocumentSectionId",
                 table: "DocumentChunks",
-                column: "DocumentId");
+                column: "DocumentSectionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Documents_ProjectId",
                 table: "Documents",
                 column: "ProjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DocumentSections_DocumentId",
+                table: "DocumentSections",
+                column: "DocumentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Messages_ChatId",
@@ -297,13 +323,16 @@ namespace Backend.Migrations
                 name: "Messages");
 
             migrationBuilder.DropTable(
-                name: "Documents");
+                name: "DocumentSections");
 
             migrationBuilder.DropTable(
                 name: "Chats");
 
             migrationBuilder.DropTable(
                 name: "MessageTypes");
+
+            migrationBuilder.DropTable(
+                name: "Documents");
 
             migrationBuilder.DropTable(
                 name: "Projects");

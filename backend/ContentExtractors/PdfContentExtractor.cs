@@ -6,7 +6,7 @@ namespace Backend.ContentExtractors;
 
 public class PdfContentExtractor : IContentExtractor
 {
-    public Task<string> Extract(string source, Stream stream, CancellationToken cancellationToken)
+    public Task<Content> Extract(string source, Stream stream, CancellationToken cancellationToken)
     {
         var sb = new StringBuilder();
 
@@ -17,6 +17,7 @@ public class PdfContentExtractor : IContentExtractor
             sb.Append(text);
         }
 
-        return Task.FromResult(sb.ToString());
+        // TODO: extract title and sections
+        return Task.FromResult(new Content(null, [new ContentSection(null, sb.ToString())]));
     }
 }

@@ -12,12 +12,12 @@ public class DocumentChunkTypeConfiguration : IEntityTypeConfiguration<DocumentC
         builder.HasKey(e => e.Id)
             .HasName("PK_DocumentChunks");
 
-        builder.HasIndex(e => e.DocumentId, "IX_DocumentChunks_DocumentId");
+        builder.HasIndex(e => e.DocumentSectionId, "IX_DocumentChunks_DocumentSectionId");
 
-        builder.HasOne(x => x.Document)
+        builder.HasOne(x => x.DocumentSection)
             .WithMany(p => p.DocumentChunks)
-            .HasForeignKey(d => d.DocumentId)
+            .HasForeignKey(d => d.DocumentSectionId)
             .OnDelete(DeleteBehavior.Cascade)
-            .HasConstraintName("FK_DocumentChunks_Documents_DocumentId");
+            .HasConstraintName("FK_DocumentChunks_DocumentSections_DocumentSectionId");
     }
 }

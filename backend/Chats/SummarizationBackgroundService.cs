@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Backend.Knowledge;
 using Backend.Messages;
 using Backend.Vectors;
 using Microsoft.EntityFrameworkCore;
@@ -159,10 +160,10 @@ public class SummarizationBackgroundService : BackgroundService
                 {
                     var embeddings = await vectorCollection
                         .GetAsync(
-                            x => (x.SourceType == (int)EmbeddingSourceType.ChatSummary ||
-                                  x.SourceType == (int)EmbeddingSourceType.ChatFact ||
-                                  x.SourceType == (int)EmbeddingSourceType.ChatDecision ||
-                                  x.SourceType == (int)EmbeddingSourceType.ChatUserPreference) &&
+                            x => (x.SourceType == (int)KnowledgeSource.ChatSummary ||
+                                  x.SourceType == (int)KnowledgeSource.ChatFact ||
+                                  x.SourceType == (int)KnowledgeSource.ChatDecision ||
+                                  x.SourceType == (int)KnowledgeSource.ChatUserPreference) &&
                                  x.SourceId == chat.Id,
                             10,
                             null,

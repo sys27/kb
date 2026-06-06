@@ -1,3 +1,4 @@
+using Backend.Knowledge;
 using Microsoft.Extensions.VectorData;
 
 namespace Backend.Vectors;
@@ -26,7 +27,7 @@ public class Embeddings
             Embedding = content,
             SourceId = documentChunkId,
             ProjectId = projectId,
-            SourceType = (int)EmbeddingSourceType.DocumentChunk,
+            SourceType = (int)KnowledgeSource.DocumentChunk,
         };
 
     public static Embeddings ForChatSummary(int? projectId, int chatId, string content)
@@ -35,7 +36,7 @@ public class Embeddings
             Embedding = content,
             SourceId = chatId,
             ProjectId = projectId,
-            SourceType = (int)EmbeddingSourceType.ChatSummary,
+            SourceType = (int)KnowledgeSource.ChatSummary,
         };
 
     public static Embeddings ForChatFact(int? projectId, int factId, string content)
@@ -44,7 +45,7 @@ public class Embeddings
             Embedding = content,
             SourceId = factId,
             ProjectId = projectId,
-            SourceType = (int)EmbeddingSourceType.ChatFact,
+            SourceType = (int)KnowledgeSource.ChatFact,
         };
 
     public static Embeddings ForChatDecision(int? projectId, int decisionId, string content)
@@ -53,7 +54,7 @@ public class Embeddings
             Embedding = content,
             SourceId = decisionId,
             ProjectId = projectId,
-            SourceType = (int)EmbeddingSourceType.ChatDecision,
+            SourceType = (int)KnowledgeSource.ChatDecision,
         };
 
     public static Embeddings ForChatUserPreference(int? projectId, int preferenceId, string content)
@@ -62,6 +63,6 @@ public class Embeddings
             Embedding = content,
             SourceId = preferenceId,
             ProjectId = projectId,
-            SourceType = (int)EmbeddingSourceType.ChatUserPreference,
+            SourceType = (int)KnowledgeSource.ChatUserPreference,
         };
 }

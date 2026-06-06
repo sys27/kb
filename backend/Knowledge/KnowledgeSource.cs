@@ -1,6 +1,6 @@
-namespace Backend.Vectors;
+namespace Backend.Knowledge;
 
-public enum EmbeddingSourceType
+public enum KnowledgeSource
 {
     DocumentChunk = 1,
     ChatSummary = 2,

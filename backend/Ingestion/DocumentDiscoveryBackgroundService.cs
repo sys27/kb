@@ -13,9 +13,13 @@ public partial class DocumentDiscoveryBackgroundService : BackgroundService
 
     private readonly string[] supportedFileExtensions =
     [
-        ".txt",
+        ".epub",
+        ".htm",
+        ".html",
+        ".markdown",
         ".md",
         ".pdf",
+        ".txt",
     ];
 
     [GeneratedRegex(@"project-(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled, "en-US")]
@@ -63,8 +67,13 @@ public partial class DocumentDiscoveryBackgroundService : BackgroundService
                 }
 
                 foreach (var document in project.Documents.ToArray())
-                    if (!File.Exists(Path.Combine(options.Path, project.GetDirectoryName(), document.Name)))
-                        project.Documents.Remove(document);
+                {
+                    if (File.Exists(Path.Combine(options.Path, project.GetDirectoryName(), document.Name)))
+                        continue;
+
+                    project.Documents.Remove(document);
+                    LogDocumentRemovedFromProject(document.Name, project.Name);
+                }
 
                 foreach (var file in files)
                 {
@@ -85,21 +94,28 @@ public partial class DocumentDiscoveryBackgroundService : BackgroundService
                             ProjectId = project.Id,
                             Project = project,
                         });
+                        LogDocumentAddedToProject(fileInfo.Name, project.Name);
                     }
                     else if (document.IsIngested)
                     {
                         if (document.LastModifiedAt == fileInfo.LastWriteTimeUtc)
+                        {
+                            LogDocumentIsUnchangedSkipping(fileInfo.Name);
                             continue;
+                        }
 
                         await using var stream = File.OpenRead(file);
                         var hash = await SHA256.HashDataAsync(stream, stoppingToken);
 
-                        if (document.Hash != hash)
+                        if (!document.Hash.SequenceEqual(hash))
                             document.MarkAsToProcess();
                     }
+
+                    LogFileIsMarkedAsPending(fileInfo.Name);
                 }
 
                 await dbContext.SaveChangesAsync(stoppingToken);
+                LogProjectUpdated(project.Name);
             }
 
             logger.LogInformation("Document discovery completed.");
@@ -140,10 +156,29 @@ public partial class DocumentDiscoveryBackgroundService : BackgroundService
                 logger.LogWarning("No files found in directory '{DirectoryName}'", di.Name);
 
             filesToProcess.Add(new DirectoryFile(projectId, files));
+            LogDirectoryAddedToProcessing(di.Name);
         }
 
         return filesToProcess;
     }
+
+    [LoggerMessage(LogLevel.Information, "Document '{DocumentName}' removed from project '{ProjectName}'")]
+    private partial void LogDocumentRemovedFromProject(string documentName, string projectName);
+
+    [LoggerMessage(LogLevel.Debug, "Document '{DocumentName}' added to project '{ProjectName}'.")]
+    private partial void LogDocumentAddedToProject(string documentName, string projectName);
+
+    [LoggerMessage(LogLevel.Debug, "Document '{DocumentName}' is unchanged. Skipping.")]
+    private partial void LogDocumentIsUnchangedSkipping(string documentName);
+
+    [LoggerMessage(LogLevel.Debug, "The file '{FileName}' is marked as pending.")]
+    private partial void LogFileIsMarkedAsPending(string fileName);
+
+    [LoggerMessage(LogLevel.Debug, "Directory '{DirectoryName}' added to processing.")]
+    private partial void LogDirectoryAddedToProcessing(string directoryName);
+
+    [LoggerMessage(LogLevel.Debug, "Project '{ProjectName}' updated.")]
+    private partial void LogProjectUpdated(string projectName);
 
     private readonly record struct DirectoryFile(int ProjectId, string[] Files);
 }

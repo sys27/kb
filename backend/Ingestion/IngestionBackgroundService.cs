@@ -8,7 +8,7 @@ using Microsoft.Extensions.VectorData;
 
 namespace Backend.Ingestion;
 
-public class IngestionBackgroundService : BackgroundService
+public partial class IngestionBackgroundService : BackgroundService
 {
     private readonly IngestionOptions options;
     private readonly ILogger<IngestionBackgroundService> logger;
@@ -55,9 +55,11 @@ public class IngestionBackgroundService : BackgroundService
             var dbContext = scope.ServiceProvider.GetRequiredService<KbDbContext>();
 
             var documentsToProcess = await dbContext.Documents
-                .Include(x => x.DocumentChunks)
+                .Include(x => x.DocumentSections)
+                .ThenInclude(x => x.DocumentChunks)
                 .Include(x => x.Project)
                 .Where(x => x.Status == DocumentStatus.Pending)
+                .AsSplitQuery()
                 .ToListAsync(stoppingToken);
 
             foreach (var document in documentsToProcess)
@@ -66,8 +68,20 @@ public class IngestionBackgroundService : BackgroundService
 
                 try
                 {
-                    await vectorCollection.DeleteAsync(document.DocumentChunks.Select(x => x.Id), stoppingToken);
-                    document.DocumentChunks.Clear();
+                    var chunkIds = document.DocumentSections
+                        .SelectMany(x => x.DocumentChunks)
+                        .Select(x => x.Id)
+                        .ToArray();
+
+                    await vectorCollection.DeleteAsync(chunkIds, stoppingToken);
+                    document.DocumentSections.Clear();
+                    if (logger.IsEnabled(LogLevel.Debug))
+                    {
+                        logger.LogDebug(
+                            "Deleted chunks (Ids: {Ids}) for document (Id: {DocumentId}).",
+                            string.Join(", ", chunkIds),
+                            document.Id);
+                    }
 
                     var fileInfo = new FileInfo(filePath);
                     await using var stream = File.OpenRead(filePath);
@@ -77,23 +91,46 @@ public class IngestionBackgroundService : BackgroundService
 
                     stream.Position = 0;
                     if (!contentTypeProvider.TryGetContentType(filePath, out var contentType))
+                    {
                         contentType = "text/plain";
+                        LogFailedToDetermineContentType(filePath);
+                    }
 
                     var extractor = contentExtractorFactory.Create(contentType);
                     var content = await extractor.Extract(filePath, stream, stoppingToken);
+                    document.Title = content.Title;
 
-                    var chunks = chunker.Split(content);
-                    foreach (var chunk in chunks)
+                    var sections = content.Sections
+                        .Select(x => (x, Chunks: chunker.Split(x.Content)));
+
+                    foreach (var (contentSection, chunks) in sections)
                     {
-                        var text = content.Substring(chunk.Start, chunk.Length);
-                        var documentChunk = new DocumentChunk
+                        if (chunks.Count == 0)
                         {
-                            DocumentId = document.Id,
-                            Content = text,
-                            Start = chunk.Start,
-                            Length = chunk.Length,
+                            logger.LogWarning("No chunks found in a section for '{FilePath}' document. Skipping.", filePath);
+                            continue;
+                        }
+
+                        var section = new DocumentSection
+                        {
+                            Header = contentSection.Header,
+                            Document = document,
                         };
-                        document.DocumentChunks.Add(documentChunk);
+
+                        foreach (var chunk in chunks)
+                        {
+                            var text = contentSection.Content.Substring(chunk.Start, chunk.Length);
+                            var documentChunk = new DocumentChunk
+                            {
+                                Content = text,
+                                Start = chunk.Start,
+                                Length = chunk.Length,
+                                DocumentSection = section,
+                            };
+                            section.DocumentChunks.Add(documentChunk);
+                        }
+
+                        document.DocumentSections.Add(section);
                     }
 
                     document.MarkAsProcessed();
@@ -101,10 +138,13 @@ public class IngestionBackgroundService : BackgroundService
                     // TODO: transaction?
                     await dbContext.SaveChangesAsync(stoppingToken);
 
-                    await vectorCollection.UpsertAsync(
-                        document.DocumentChunks.Select(x =>
-                            Embeddings.ForDocumentChunk(document.ProjectId, x.Id, x.Content)),
-                        stoppingToken);
+                    var embeddings = document.DocumentSections
+                        .SelectMany(x => x.DocumentChunks)
+                        .Select(x => Embeddings.ForDocumentChunk(document.ProjectId, x.Id, x.Content));
+
+                    await vectorCollection.UpsertAsync(embeddings, stoppingToken);
+
+                    LogDocumentProcessed(filePath);
                 }
                 catch (Exception e)
                 {
@@ -131,4 +171,10 @@ public class IngestionBackgroundService : BackgroundService
             await Task.Delay(options.IngestionDelay, stoppingToken);
         }
     }
+
+    [LoggerMessage(LogLevel.Debug, "Failed to determine content type for '{FileName}'. Using 'text/plain'.")]
+    private partial void LogFailedToDetermineContentType(string fileName);
+
+    [LoggerMessage(LogLevel.Information, "Document '{FileName}' processed.")]
+    private partial void LogDocumentProcessed(string fileName);
 }

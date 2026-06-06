@@ -11,14 +11,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(KbDbContext))]
-    [Migration("20260513170125_Initial")]
-    partial class Initial
+    [Migration("20260606142350_FullText")]
+    partial class FullText
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.7");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
 
             modelBuilder.Entity("Backend.Chats.Chat", b =>
                 {
@@ -177,6 +177,10 @@ namespace Backend.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValue("Pending");
 
+                    b.Property<string>("Title")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id")
                         .HasName("PK_Documents");
 
@@ -195,7 +199,7 @@ namespace Backend.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("DocumentId")
+                    b.Property<int>("DocumentSectionId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("Length")
@@ -207,9 +211,30 @@ namespace Backend.Migrations
                     b.HasKey("Id")
                         .HasName("PK_DocumentChunks");
 
-                    b.HasIndex(new[] { "DocumentId" }, "IX_DocumentChunks_DocumentId");
+                    b.HasIndex(new[] { "DocumentSectionId" }, "IX_DocumentChunks_DocumentSectionId");
 
                     b.ToTable("DocumentChunks", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Ingestion.DocumentSection", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Header")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id")
+                        .HasName("PK_DocumentSections");
+
+                    b.HasIndex(new[] { "DocumentId" }, "IX_DocumentSections_DocumentId");
+
+                    b.ToTable("DocumentSections", (string)null);
                 });
 
             modelBuilder.Entity("Backend.Messages.Message", b =>
@@ -385,12 +410,24 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Ingestion.DocumentChunk", b =>
                 {
-                    b.HasOne("Backend.Ingestion.Document", "Document")
+                    b.HasOne("Backend.Ingestion.DocumentSection", "DocumentSection")
                         .WithMany("DocumentChunks")
+                        .HasForeignKey("DocumentSectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_DocumentChunks_DocumentSections_DocumentSectionId");
+
+                    b.Navigation("DocumentSection");
+                });
+
+            modelBuilder.Entity("Backend.Ingestion.DocumentSection", b =>
+                {
+                    b.HasOne("Backend.Ingestion.Document", "Document")
+                        .WithMany("DocumentSections")
                         .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("FK_DocumentChunks_Documents_DocumentId");
+                        .HasConstraintName("FK_DocumentSections_Documents_DocumentId");
 
                     b.Navigation("Document");
                 });
@@ -430,6 +467,11 @@ namespace Backend.Migrations
                 });
 
             modelBuilder.Entity("Backend.Ingestion.Document", b =>
+                {
+                    b.Navigation("DocumentSections");
+                });
+
+            modelBuilder.Entity("Backend.Ingestion.DocumentSection", b =>
                 {
                     b.Navigation("DocumentChunks");
                 });

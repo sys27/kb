@@ -10,7 +10,7 @@ public class DocumentChunk
 
     public required int Length { get; init; }
 
-    public int DocumentId { get; init; }
+    public int DocumentSectionId { get; init; }
 
-    public Document? Document { get; init; }
+    public DocumentSection? DocumentSection { get; init; }
 }

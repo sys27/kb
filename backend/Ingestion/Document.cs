@@ -8,6 +8,8 @@ public class Document
 
     public required string Name { get; init; }
 
+    public string? Title { get; set; }
+
     public DateTime? LastModifiedAt { get; set; }
 
     public byte[] Hash { get; set; } = [];
@@ -18,7 +20,7 @@ public class Document
 
     public Project? Project { get; init; }
 
-    public ICollection<DocumentChunk> DocumentChunks { get; init; } = new List<DocumentChunk>();
+    public ICollection<DocumentSection> DocumentSections { get; init; } = new List<DocumentSection>();
 
     public bool IsPending
         => Status == DocumentStatus.Pending;
