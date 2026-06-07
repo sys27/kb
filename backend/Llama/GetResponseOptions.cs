@@ -4,11 +4,11 @@ public class GetResponseOptions
 {
     public string? Model { get; set; }
 
-    public int? ThinkingBudgetTokens { get; set; }
+    public bool EnableThinking { get; set; } = true;
 
-    public static GetResponseOptions NoReasoning
+    public static GetResponseOptions NoThinking
         => new GetResponseOptions
         {
-            ThinkingBudgetTokens = 1,
+            EnableThinking = false,
         };
 }

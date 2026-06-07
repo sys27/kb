@@ -28,12 +28,15 @@ public class LlamaCppClient
         CancellationToken cancellationToken = default)
     {
         var model = options?.Model ?? llmOptions.Model;
-        var thinkingBudgetTokens = options?.ThinkingBudgetTokens ?? -1;
+        var enableThinking = options?.EnableThinking ?? true;
 
         var request = new
         {
             model,
-            thinking_budget_tokens = thinkingBudgetTokens,
+            chat_template_kwargs = new
+            {
+                enable_thinking = enableThinking,
+            },
             messages
         };
         var httpResponse = await httpClient.PostAsJsonAsync("/v1/chat/completions", request, cancellationToken);
@@ -52,13 +55,16 @@ public class LlamaCppClient
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var model = options?.Model ?? llmOptions.Model;
-        var thinkingBudgetTokens = options?.ThinkingBudgetTokens ?? -1;
+        var enableThinking = options?.EnableThinking ?? true;
 
         var request = new
         {
             stream = true,
             model,
-            thinking_budget_tokens = thinkingBudgetTokens,
+            chat_template_kwargs = new
+            {
+                enable_thinking = enableThinking,
+            },
             messages
         };
         var httpMessage = new HttpRequestMessage(HttpMethod.Post, "/v1/chat/completions");

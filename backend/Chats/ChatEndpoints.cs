@@ -175,7 +175,7 @@ public static class ChatEndpoints
 
                 var generatedName = await chatClient.GetResponse(
                     LlamaMessage.ForUser(prompt),
-                    GetResponseOptions.NoReasoning,
+                    GetResponseOptions.NoThinking,
                     cancellationToken);
 
                 if (string.IsNullOrWhiteSpace(generatedName))
@@ -236,7 +236,7 @@ public static class ChatEndpoints
 
                 var response = await chatClient.GetResponse(
                     LlamaMessage.ForUser(prompt),
-                    GetResponseOptions.NoReasoning,
+                    GetResponseOptions.NoThinking,
                     cancellationToken);
 
                 var followUps = JsonSerializer.Deserialize<List<string>>(response)?.Take(3).ToList() ?? [];
