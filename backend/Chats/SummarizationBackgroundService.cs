@@ -10,7 +10,7 @@ using Microsoft.Extensions.VectorData;
 
 namespace Backend.Chats;
 
-public class SummarizationBackgroundService : BackgroundService
+public partial class SummarizationBackgroundService : BackgroundService
 {
     private readonly IServiceScopeFactory scopeFactory;
     private readonly ILogger<SummarizationBackgroundService> logger;
@@ -116,8 +116,12 @@ public class SummarizationBackgroundService : BackgroundService
                 .AsSplitQuery()
                 .ToListAsync(stoppingToken);
 
+            LogFoundChatsToSummarize(chats.Count);
+
             foreach (var chat in chats)
             {
+                LogSummarizingChat(chat.Id);
+
                 var messages = chat.Messages
                     .Where(x => x.MessageTypeId is
                         MessageType.AssistantAnswerId or
@@ -127,13 +131,17 @@ public class SummarizationBackgroundService : BackgroundService
                     .Select(x => new Message(x.MessageType!.Role, x.Text, x.Timestamp))
                     .ToList();
 
+
                 var conversation = new Conversation(messages);
                 var json = JsonSerializer.Serialize(conversation, JsonSerializerOptions.Web);
                 var prompt = string.Format(SummaryPrompt, json);
+                LogSummarizationPrompt(prompt);
 
                 // TODO: summary of summaries?
                 var chatMessage = new ChatMessage(ChatRole.User, prompt);
                 var summary = await chatClient.GetResponseAsync(chatMessage, null, stoppingToken);
+
+                LogSummaryForChat(chat.Id, summary.Text);
 
                 var summaryResponse = ParseSummaryResponse(summary.Text);
                 if (summaryResponse is null)
@@ -212,6 +220,8 @@ public class SummarizationBackgroundService : BackgroundService
                         preference.Preference);
                     await vectorCollection.UpsertAsync(preferenceEmbeddings, stoppingToken);
                 }
+
+                LogSummarizationForChatCompleted(chat.Id);
             }
 
             logger.LogInformation("Summarization completed.");
@@ -256,4 +266,19 @@ public class SummarizationBackgroundService : BackgroundService
 
         public List<string> UserPreferences { get; set; } = [];
     }
+
+    [LoggerMessage(LogLevel.Debug, "Found {Count} chats to summarize.")]
+    private partial void LogFoundChatsToSummarize(int count);
+
+    [LoggerMessage(LogLevel.Debug, "Summarizing chat (Id: {ChatId}).")]
+    private partial void LogSummarizingChat(int chatId);
+
+    [LoggerMessage(LogLevel.Debug, "Summarization prompt: {Prompt}.")]
+    private partial void LogSummarizationPrompt(string prompt);
+
+    [LoggerMessage(LogLevel.Debug, "Summary for chat (Id: {ChatId}): {Response}")]
+    private partial void LogSummaryForChat(int chatId, string response);
+
+    [LoggerMessage(LogLevel.Debug, "Summarization for chat (Id: {ChatId}) completed.")]
+    private partial void LogSummarizationForChatCompleted(int chatId);
 }

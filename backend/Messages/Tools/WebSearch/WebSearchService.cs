@@ -84,6 +84,7 @@ public class WebSearchService
             var extractor = contentExtractorFactory.Create(contentType);
             var content = await extractor.Extract(url, stream, cancellationToken);
             var chunkedContent = content.Sections
+                .Where(x => !string.IsNullOrWhiteSpace(x.Content))
                 .SelectMany(x => textChunker.Split(x.Content).Select(c => (x.Content, Chunk: c)))
                 .Select(x => x.Content.Substring(x.Chunk.Start, x.Chunk.Length))
                 .ToArray();

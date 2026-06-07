@@ -69,7 +69,12 @@ public partial class RemoveDanglingEmbeddingsService : BackgroundService
                     .ToListAsync(stoppingToken);
 
                 if (embeddingIds.Count == 0)
+                {
+                    LogNoDanglingEmbeddingsFound();
                     break;
+                }
+
+                LogFoundDanglingEmbeddings(embeddingIds.Count);
 
                 await using var transaction = await dbContext.Database.BeginTransactionAsync(stoppingToken);
                 try
@@ -113,4 +118,10 @@ public partial class RemoveDanglingEmbeddingsService : BackgroundService
 
     [LoggerMessage(LogLevel.Information, "Removed {Count} dangling embeddings.")]
     private partial void LogRemovedDanglingEmbeddings(int count);
+
+    [LoggerMessage(LogLevel.Information, "Found {Count} dangling embeddings.")]
+    private partial void LogFoundDanglingEmbeddings(int count);
+
+    [LoggerMessage(LogLevel.Debug, "No dangling embeddings found.")]
+    private partial void LogNoDanglingEmbeddingsFound();
 }

@@ -101,6 +101,7 @@ public partial class IngestionBackgroundService : BackgroundService
                     document.Title = content.Title;
 
                     var sections = content.Sections
+                        .Where(x => !string.IsNullOrWhiteSpace(x.Content))
                         .Select(x => (x, Chunks: chunker.Split(x.Content)));
 
                     foreach (var (contentSection, chunks) in sections)
