@@ -64,9 +64,10 @@ export async function getMessages(chatId: number): Promise<Message[]> {
         .filter(x => x.messageTypeId != MessageType.systemId);
 }
 
-export async function* sendMessage(chatId: number, message: string) {
+export async function* sendMessage(chatId: number, message: string, enableWebSearch: boolean) {
     let request = {
         text: message,
+        enableWebSearch: enableWebSearch,
     };
     let response = await fetch(`/api/chats/${chatId}/messages`, {
         method: 'POST',

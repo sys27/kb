@@ -1,14 +1,15 @@
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileText, MessageCircle, Plus, Search, Send } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { MessageCircle, Plus, Search, Send, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import z from 'zod';
 import FollowUpQuestion from '~/blocks/follow-up-question';
 import MessageItem from '~/blocks/message-item';
 import MessageSkeletonItem from '~/blocks/message-skeleton-item';
+import { Badge } from '~/components/ui/badge';
+import { Button } from '~/components/ui/button';
 import {
     DropdownMenu,
-    DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
@@ -51,6 +52,8 @@ export default function Chat({ params }: Route.ComponentProps) {
     let queryClient = useQueryClient();
     let messageOptionsForChat = messagesOptions(chatId);
     let { data: messages, isPending } = useQuery(messageOptionsForChat);
+    let [webSearchEnabled, setWebSearchEnabled] = useState<Map<number, boolean>>(new Map());
+    let enableWebSearch = webSearchEnabled.get(chatId) ?? false;
 
     let form = useForm({
         defaultValues: {
@@ -65,7 +68,7 @@ export default function Chat({ params }: Route.ComponentProps) {
     });
     let mutation = useMutation({
         mutationFn: async (form: FormType) => {
-            let request = sendMessage(chatId, form.message);
+            let request = sendMessage(chatId, form.message, enableWebSearch);
             let lastChunk: MessageSse | null = null;
 
             for await (let chunk of request) {
@@ -263,24 +266,50 @@ export default function Chat({ params }: Route.ComponentProps) {
                     />
                     <InputGroupAddon
                         align="block-end"
-                        className="flex flex-row justify-between">
-                        <InputGroupButton>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Plus />
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-48">
-                                    <DropdownMenuItem disabled>
-                                        <FileText />
-                                        Add File
-                                    </DropdownMenuItem>
-                                    <DropdownMenuCheckboxItem checked={true}>
-                                        <Search />
-                                        Web Search
-                                    </DropdownMenuCheckboxItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </InputGroupButton>
+                        className="flex flex-row">
+                        <div className="flex flex-1 flex-row">
+                            <InputGroupButton>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger>
+                                        <Plus />
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-48">
+                                        <DropdownMenuItem
+                                            onSelect={() =>
+                                                setWebSearchEnabled(prev => {
+                                                    let next = new Map(prev);
+                                                    next.set(chatId, !next.get(chatId) || false);
+                                                    return next;
+                                                })
+                                            }>
+                                            <Search />
+                                            Web Search
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </InputGroupButton>
+                            {enableWebSearch && (
+                                <Badge
+                                    variant="default"
+                                    className="inline-flex items-center gap-1">
+                                    <Search />
+                                    Web Search
+                                    <Button
+                                        variant="ghost"
+                                        size="xs"
+                                        className="m-0 rounded-full p-0"
+                                        onClick={() =>
+                                            setWebSearchEnabled(prev => {
+                                                let next = new Map(prev);
+                                                next.set(chatId, false);
+                                                return next;
+                                            })
+                                        }>
+                                        <X />
+                                    </Button>
+                                </Badge>
+                            )}
+                        </div>
                         <InputGroupButton
                             type="submit"
                             disabled={mutation.isPending}>
