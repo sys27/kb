@@ -251,8 +251,4 @@ public static class ChatEndpoints
 
         return app;
     }
-
-    private record Conversation(List<ConversationMessage> Messages);
-
-    private record ConversationMessage(string Role, string Text);
 }

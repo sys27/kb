@@ -25,16 +25,22 @@ public class GatherKnowledge : IConversationPipelineStep
 
     public async Task ExecuteAsync(ConversationPipelineContext context, CancellationToken cancellationToken = default)
     {
-        // TODO: use LLM to generate query?
         var chat = context.Get<Chat>("chat");
         var requestText = context.Get<string>("requestText");
         var combinedMessage = new StringBuilder();
 
-        await AddUserPreferences(chat, requestText, combinedMessage, cancellationToken);
-        await AddFacts(chat, requestText, combinedMessage, cancellationToken);
-        await AddDecisions(chat, requestText, combinedMessage, cancellationToken);
-        await AddSummaries(chat, requestText, combinedMessage, cancellationToken);
-        await AddDocuments(chat, requestText, combinedMessage, cancellationToken);
+        var knowledge = await knowledgeService.Search(
+            KnowledgeSource.All,
+            requestText,
+            chat.Id,
+            chat.ProjectId,
+            cancellationToken);
+
+        AddUserPreferences(knowledge.Where(x => x.SourceType == KnowledgeSource.ChatUserPreference), combinedMessage);
+        AddFacts(knowledge.Where(x => x.SourceType == KnowledgeSource.ChatFact), combinedMessage);
+        AddDecisions(knowledge.Where(x => x.SourceType == KnowledgeSource.ChatDecision), combinedMessage);
+        AddSummaries(knowledge.Where(x => x.SourceType == KnowledgeSource.ChatSummary), combinedMessage);
+        AddDocuments(knowledge.Where(x => x.SourceType == KnowledgeSource.DocumentChunk), combinedMessage);
 
         if (combinedMessage.Length > 0)
         {
@@ -71,19 +77,12 @@ public class GatherKnowledge : IConversationPipelineStep
         }
     }
 
-    private async Task AddUserPreferences(
-        Chat chat,
-        string requestText,
-        StringBuilder combinedMessage,
-        CancellationToken cancellationToken)
+    private void AddUserPreferences(
+        IEnumerable<KnowledgeEntry> knowledgeEntries,
+        StringBuilder combinedMessage)
     {
-        var preferences = await knowledgeService.Search(
-            KnowledgeSource.ChatUserPreference,
-            requestText,
-            chat.ProjectId,
-            cancellationToken);
-
-        if (preferences.Count == 0)
+        var preferences = knowledgeEntries.ToArray();
+        if (preferences.Length == 0)
             return;
 
         var json = JsonSerializer.Serialize(preferences, JsonSerializerOptions.Web);
@@ -95,19 +94,12 @@ public class GatherKnowledge : IConversationPipelineStep
             .AppendLine("```");
     }
 
-    private async Task AddFacts(
-        Chat chat,
-        string requestText,
-        StringBuilder combinedMessage,
-        CancellationToken cancellationToken)
+    private void AddFacts(
+        IEnumerable<KnowledgeEntry> knowledgeEntries,
+        StringBuilder combinedMessage)
     {
-        var facts = await knowledgeService.Search(
-            KnowledgeSource.ChatFact,
-            requestText,
-            chat.ProjectId,
-            cancellationToken);
-
-        if (facts.Count == 0)
+        var facts = knowledgeEntries.ToArray();
+        if (facts.Length == 0)
             return;
 
         var json = JsonSerializer.Serialize(facts, JsonSerializerOptions.Web);
@@ -119,19 +111,12 @@ public class GatherKnowledge : IConversationPipelineStep
             .AppendLine("```");
     }
 
-    private async Task AddDecisions(
-        Chat chat,
-        string requestText,
-        StringBuilder combinedMessage,
-        CancellationToken cancellationToken)
+    private void AddDecisions(
+        IEnumerable<KnowledgeEntry> knowledgeEntries,
+        StringBuilder combinedMessage)
     {
-        var decisions = await knowledgeService.Search(
-            KnowledgeSource.ChatDecision,
-            requestText,
-            chat.ProjectId,
-            cancellationToken);
-
-        if (decisions.Count == 0)
+        var decisions = knowledgeEntries.ToArray();
+        if (decisions.Length == 0)
             return;
 
         var json = JsonSerializer.Serialize(decisions, JsonSerializerOptions.Web);
@@ -143,19 +128,12 @@ public class GatherKnowledge : IConversationPipelineStep
             .AppendLine("```");
     }
 
-    private async Task AddSummaries(
-        Chat chat,
-        string requestText,
-        StringBuilder combinedMessage,
-        CancellationToken cancellationToken)
+    private void AddSummaries(
+        IEnumerable<KnowledgeEntry> knowledgeEntries,
+        StringBuilder combinedMessage)
     {
-        var summaries = await knowledgeService.Search(
-            KnowledgeSource.ChatSummary,
-            requestText,
-            chat.ProjectId,
-            cancellationToken);
-
-        if (summaries.Count == 0)
+        var summaries = knowledgeEntries.ToArray();
+        if (summaries.Length == 0)
             return;
 
         var json = JsonSerializer.Serialize(summaries, JsonSerializerOptions.Web);
@@ -167,19 +145,12 @@ public class GatherKnowledge : IConversationPipelineStep
             .AppendLine("```");
     }
 
-    private async Task AddDocuments(
-        Chat chat,
-        string requestText,
-        StringBuilder combinedMessage,
-        CancellationToken cancellationToken)
+    private void AddDocuments(
+        IEnumerable<KnowledgeEntry> knowledgeEntries,
+        StringBuilder combinedMessage)
     {
-        var documents = await knowledgeService.Search(
-            KnowledgeSource.DocumentChunk,
-            requestText,
-            chat.ProjectId,
-            cancellationToken);
-
-        if (documents.Count == 0)
+        var documents = knowledgeEntries.ToArray();
+        if (documents.Length == 0)
             return;
 
         var json = JsonSerializer.Serialize(documents, jsonOptions);

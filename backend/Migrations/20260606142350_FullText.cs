@@ -22,9 +22,7 @@ namespace Backend.Migrations
                     Content    TEXT    NOT NULL,
                     SourceType INTEGER NOT NULL,
                     SourceId   INTEGER NOT NULL,
-                    ProjectId  INTEGER,
-
-                    CONSTRAINT UX_FullTextIndex_SourceType_SourceId UNIQUE (SourceType, SourceId)
+                    ProjectId  INTEGER
                 );
 
                 CREATE INDEX IX_FullTextIndex_ProjectId
@@ -111,7 +109,7 @@ namespace Backend.Migrations
                 BEGIN
                     INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
                     SELECT NEW.Fact,
-                           3,
+                           4,
                            NEW.Id,
                            C.ProjectId
                     FROM Chats C
@@ -123,7 +121,7 @@ namespace Backend.Migrations
                 BEGIN
                     DELETE
                     FROM FullTextIndex
-                    WHERE SourceType = 3
+                    WHERE SourceType = 4
                       AND SourceId = OLD.Id;
                 END;
                 CREATE TRIGGER FullTextIndex_ChatFacts_Update
@@ -132,12 +130,12 @@ namespace Backend.Migrations
                 BEGIN
                     DELETE
                     FROM FullTextIndex
-                    WHERE SourceType = 3
+                    WHERE SourceType = 4
                       AND SourceId = OLD.Id;
 
                     INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
                     SELECT NEW.Fact,
-                           3,
+                           4,
                            NEW.Id,
                            C.ProjectId
                     FROM Chats C
@@ -151,7 +149,7 @@ namespace Backend.Migrations
                 BEGIN
                     INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
                     SELECT 'Decision: ' || NEW.Decision || ' Reason: ' || NEW.Reason,
-                           4,
+                           8,
                            NEW.Id,
                            C.ProjectId
                     FROM Chats C
@@ -163,7 +161,7 @@ namespace Backend.Migrations
                 BEGIN
                     DELETE
                     FROM FullTextIndex
-                    WHERE SourceType = 4
+                    WHERE SourceType = 8
                       AND SourceId = OLD.Id;
                 END;
                 CREATE TRIGGER FullTextIndex_ChatDecisions_Update
@@ -172,12 +170,12 @@ namespace Backend.Migrations
                 BEGIN
                     DELETE
                     FROM FullTextIndex
-                    WHERE SourceType = 4
+                    WHERE SourceType = 8
                       AND SourceId = OLD.Id;
 
                     INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
                     SELECT 'Decision: ' || NEW.Decision || ' Reason: ' || NEW.Reason,
-                           4,
+                           8,
                            NEW.Id,
                            C.ProjectId
                     FROM Chats C
@@ -191,7 +189,7 @@ namespace Backend.Migrations
                 BEGIN
                     INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
                     SELECT NEW.Preference,
-                           5,
+                           16,
                            NEW.Id,
                            C.ProjectId
                     FROM Chats C
@@ -203,7 +201,7 @@ namespace Backend.Migrations
                 BEGIN
                     DELETE
                     FROM FullTextIndex
-                    WHERE SourceType = 5
+                    WHERE SourceType = 16
                       AND SourceId = OLD.Id;
                 END;
                 CREATE TRIGGER FullTextIndex_ChatUserPreferences_Update
@@ -212,12 +210,12 @@ namespace Backend.Migrations
                 BEGIN
                     DELETE
                     FROM FullTextIndex
-                    WHERE SourceType = 5
+                    WHERE SourceType = 16
                       AND SourceId = OLD.Id;
 
                     INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
                     SELECT NEW.Preference,
-                           5,
+                           16,
                            NEW.Id,
                            C.ProjectId
                     FROM Chats C

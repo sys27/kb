@@ -128,9 +128,8 @@ public partial class SummarizationBackgroundService : BackgroundService
                         MessageType.UserContextId or
                         MessageType.UserRequestId)
                     .OrderBy(x => x.Id)
-                    .Select(x => new Message(x.MessageType!.Role, x.Text, x.Timestamp))
+                    .Select(x => new ConversationMessage(x.MessageType!.Role, x.Text))
                     .ToList();
-
 
                 var conversation = new Conversation(messages);
                 var json = JsonSerializer.Serialize(conversation, JsonSerializerOptions.Web);
@@ -247,10 +246,6 @@ public partial class SummarizationBackgroundService : BackgroundService
 
         return null;
     }
-
-    private record Conversation(List<Message> Messages);
-
-    private record Message(string Role, string Text, DateTime Timestamp);
 
     private record DecisionResponse(string Decision, string Reason);
 

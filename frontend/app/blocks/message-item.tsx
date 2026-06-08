@@ -30,12 +30,14 @@ renderer.code = function ({ text, lang }): string {
 
 const marked = new Marked({ renderer });
 
+async function handleCopy(text: string) {
+    await navigator.clipboard.writeText(text);
+}
+
 export default function MessageItem({ message }: { message: Message }) {
-    let handleCopy = async () => {
-        await navigator.clipboard.writeText(message.text);
-    };
     let isOpen =
         message.messageTypeId == MessageType.assistantAnswerId ||
+        message.messageTypeId == MessageType.assistantReasoningId ||
         message.messageTypeId == MessageType.userRequestId;
     let role = getMessageRoleName(message);
     let kind = getMessageKindName(message);
@@ -69,7 +71,7 @@ export default function MessageItem({ message }: { message: Message }) {
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={handleCopy}>
+                            onClick={() => handleCopy(message.text)}>
                             <Copy />
                         </Button>
                         <span className="text-muted-foreground">
