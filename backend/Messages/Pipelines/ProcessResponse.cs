@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http.Json;
@@ -9,11 +8,16 @@ namespace Backend.Messages.Pipelines;
 
 public class ProcessResponse : IConversationPipelineStep
 {
+    private readonly ILogger<ProcessResponse> logger;
     private readonly HttpContext httpContext;
     private readonly JsonOptions jsonOptions;
 
-    public ProcessResponse(IHttpContextAccessor httpContextAccessor, IOptions<JsonOptions> jsonOptions)
+    public ProcessResponse(
+        ILogger<ProcessResponse> logger,
+        IHttpContextAccessor httpContextAccessor,
+        IOptions<JsonOptions> jsonOptions)
     {
+        this.logger = logger;
         this.httpContext = httpContextAccessor.HttpContext ??
                            throw new ArgumentNullException(nameof(httpContextAccessor));
 
@@ -27,8 +31,9 @@ public class ProcessResponse : IConversationPipelineStep
         var streamingResponse = context.Get<IAsyncEnumerable<ChatResponseUpdate>>("streamingResponse");
 
         var reasoningResponse = new StringBuilder();
-        var toolResponse = new StringBuilder();
         var finalResponse = new StringBuilder();
+        var toolCallResponse = new StringBuilder();
+        var toolResultResponse = new StringBuilder();
         await foreach (var chatResponse in streamingResponse.WithCancellation(cancellationToken))
         {
             foreach (var content in chatResponse.Contents)
@@ -45,21 +50,27 @@ public class ProcessResponse : IConversationPipelineStep
                 }
                 else if (content is FunctionCallContent functionCall)
                 {
-                    var toolCall = $"Calling tool: {functionCall.Name}({functionCall.Arguments})";
-                    toolResponse.AppendLine(toolCall);
-                    // TODO: write tool call to SSE
-                    // await WriteSse(toolCall, cancellationToken);
+                    var toolCallJson = GetToolCall(functionCall);
+                    toolCallResponse.AppendLine(toolCallJson);
+                    await WriteToolCall(toolCallJson, cancellationToken);
+                }
+                else if (content is FunctionResultContent functionResult)
+                {
+                    var toolResultJson = GetToolResult(functionResult);
+                    toolResultResponse.AppendLine(toolResultJson);
+                    await WriteToolResult(toolResultJson, cancellationToken);
                 }
                 else
                 {
-                    Debug.WriteLine($"Skipping content type: {content.GetType().Name}");
+                    logger.LogWarning("Skipping unknown content type: {ContentType}", content.GetType().Name);
                 }
             }
         }
 
         context.Set("reasoningResponse", reasoningResponse.ToString());
-        context.Set("toolResponse", toolResponse.ToString());
         context.Set("finalResponse", finalResponse.ToString());
+        context.Set("toolCallResponse", toolCallResponse.ToString());
+        context.Set("toolResultResponse", toolResultResponse.ToString());
     }
 
     private async Task WriteSseHeaders(CancellationToken cancellationToken)
@@ -95,6 +106,61 @@ public class ProcessResponse : IConversationPipelineStep
         var message = new MessageSse(MessageType.AssistantAnswerId, text);
 
         await WriteSse(message, cancellationToken);
+    }
+
+    private async Task WriteToolCall(string text, CancellationToken cancellationToken)
+    {
+        var message = new MessageSse(MessageType.ToolCallId, text);
+
+        await WriteSse(message, cancellationToken);
+    }
+
+    private async Task WriteToolResult(string text, CancellationToken cancellationToken)
+    {
+        var message = new MessageSse(MessageType.ToolResultId, text);
+
+        await WriteSse(message, cancellationToken);
+    }
+
+    private string GetToolCall(FunctionCallContent functionCall)
+    {
+        var arguments = new Dictionary<string, string>();
+        if (functionCall.Arguments is not null)
+            foreach (var (parameter, value) in functionCall.Arguments)
+                if (value is JsonElement element)
+                    arguments[parameter] = element.GetRawText();
+
+        var exception = functionCall.Exception?.Message;
+
+        var toolCall = new
+        {
+            callId = functionCall.CallId,
+            function = functionCall.Name,
+            arguments,
+            exception,
+        };
+        var json = JsonSerializer.Serialize(toolCall, jsonOptions.SerializerOptions);
+
+        return json;
+    }
+
+    private string GetToolResult(FunctionResultContent functionResult)
+    {
+        var result = functionResult switch
+        {
+            { Exception: not null } => functionResult.Exception.Message,
+            { Result: JsonElement element } => element.GetRawText(),
+            _ => functionResult.Result,
+        };
+
+        var toolResult = new
+        {
+            callId = functionResult.CallId,
+            result,
+        };
+        var json = JsonSerializer.Serialize(toolResult, jsonOptions.SerializerOptions);
+
+        return json;
     }
 
     private readonly record struct MessageSse(int MessageTypeId, string Text);

@@ -64,6 +64,24 @@ public class Message
             Timestamp = DateTime.UtcNow
         };
 
+    public static Message ForToolCall(int chatId, string text)
+        => new Message
+        {
+            MessageTypeId = MessageType.ToolCallId,
+            Text = text,
+            ChatId = chatId,
+            Timestamp = DateTime.UtcNow
+        };
+
+    public static Message ForToolResult(int chatId, string text)
+        => new Message
+        {
+            MessageTypeId = MessageType.ToolResultId,
+            Text = text,
+            ChatId = chatId,
+            Timestamp = DateTime.UtcNow
+        };
+
     public ChatMessage ToChatMessage()
     {
         var role = MessageTypeId switch

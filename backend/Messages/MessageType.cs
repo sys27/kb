@@ -7,6 +7,8 @@ public class MessageType
     public const int AssistantAnswerId = 3;
     public const int UserContextId = 4;
     public const int UserRequestId = 5;
+    public const int ToolCallId = 6;
+    public const int ToolResultId = 7;
 
     public required int Id { get; init; }
 

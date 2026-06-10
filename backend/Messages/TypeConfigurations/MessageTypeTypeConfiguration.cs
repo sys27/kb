@@ -25,7 +25,9 @@ public class MessageTypeTypeConfiguration : IEntityTypeConfiguration<MessageType
             new MessageType { Id = MessageType.AssistantReasoningId, Role = "Assistant", Kind = "Reasoning" },
             new MessageType { Id = MessageType.AssistantAnswerId, Role = "Assistant", Kind = "Answer" },
             new MessageType { Id = MessageType.UserContextId, Role = "User", Kind = "Context" },
-            new MessageType { Id = MessageType.UserRequestId, Role = "User", Kind = "Request" }
+            new MessageType { Id = MessageType.UserRequestId, Role = "User", Kind = "Request" },
+            new MessageType { Id = MessageType.ToolCallId, Role = "Tool", Kind = "Call" },
+            new MessageType { Id = MessageType.ToolResultId, Role = "Tool", Kind = "Result" }
         );
     }
 }

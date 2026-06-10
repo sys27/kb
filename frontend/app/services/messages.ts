@@ -7,6 +7,8 @@ export const MessageType = {
     assistantAnswerId: 3,
     userContextId: 4,
     userRequestId: 5,
+    toolCallId: 6,
+    toolResultId: 7,
 } as const;
 
 const MessageTypeRoles: Record<(typeof MessageType)[keyof typeof MessageType], string> = {
@@ -15,6 +17,8 @@ const MessageTypeRoles: Record<(typeof MessageType)[keyof typeof MessageType], s
     [MessageType.assistantAnswerId]: 'Assistant',
     [MessageType.userContextId]: 'User',
     [MessageType.userRequestId]: 'User',
+    [MessageType.toolCallId]: 'Tool',
+    [MessageType.toolResultId]: 'Tool',
 };
 
 const MessageTypeKinds: Record<(typeof MessageType)[keyof typeof MessageType], string> = {
@@ -23,6 +27,8 @@ const MessageTypeKinds: Record<(typeof MessageType)[keyof typeof MessageType], s
     [MessageType.assistantAnswerId]: '',
     [MessageType.userContextId]: 'Context',
     [MessageType.userRequestId]: '',
+    [MessageType.toolCallId]: '',
+    [MessageType.toolResultId]: '',
 };
 
 const MessageSchema = z.object({

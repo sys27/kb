@@ -194,12 +194,23 @@ export default function Chat({ params }: Route.ComponentProps) {
                             <MessageSkeletonItem />
                         </>
                     ) : messages && messages.length > 0 ? (
-                        messages.map(message => (
-                            <MessageItem
-                                key={message.id}
-                                message={message}
-                            />
-                        ))
+                        (() => {
+                            let toolResults: Record<string, Message> = {};
+                            for (let m of messages) {
+                                if (m.messageTypeId === MessageType.toolResultId) {
+                                    let data = JSON.parse(m.text) as { callId: string };
+                                    toolResults[data.callId] = m;
+                                }
+                            }
+
+                            return messages.map(message => (
+                                <MessageItem
+                                    key={message.id}
+                                    message={message}
+                                    toolResults={toolResults}
+                                />
+                            ));
+                        })()
                     ) : (
                         <Empty>
                             <EmptyHeader>

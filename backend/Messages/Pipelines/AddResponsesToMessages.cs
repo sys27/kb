@@ -13,19 +13,21 @@ public class AddResponsesToMessages : IConversationPipelineStep
     {
         var chat = context.Get<Chat>("chat");
         var reasoningResponse = context.Get<string>("reasoningResponse");
-        var toolResponse = context.Get<string>("toolResponse");
+        var toolCallResponse = context.Get<string>("toolCallResponse");
+        var toolResultResponse = context.Get<string>("toolResultResponse");
         var finalResponse = context.Get<string>("finalResponse");
 
         if (reasoningResponse.Length > 0)
             chat.AddMessage(Message.ForReasoning(chat.Id, reasoningResponse));
 
-        if (toolResponse.Length > 0)
-        {
-            // TODO: Add tool message
-            // chat.AddMessage(Message.ForTool(chat.Id, toolResponse));
-        }
+        if (toolCallResponse.Length > 0)
+            chat.AddMessage(Message.ForToolCall(chat.Id, toolCallResponse));
 
-        chat.AddMessage(Message.ForAssistant(chat.Id, finalResponse));
+        if (toolResultResponse.Length > 0)
+            chat.AddMessage(Message.ForToolResult(chat.Id, toolResultResponse));
+
+        if (finalResponse.Length > 0)
+            chat.AddMessage(Message.ForAssistant(chat.Id, finalResponse));
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
