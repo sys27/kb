@@ -37,7 +37,6 @@ async function handleCopy(text: string) {
 export default function MessageText({ message }: { message: Message }) {
     let isOpen =
         message.messageTypeId == MessageType.assistantAnswerId ||
-        message.messageTypeId == MessageType.assistantReasoningId ||
         message.messageTypeId == MessageType.userRequestId;
     let role = getMessageRoleName(message);
     let kind = getMessageKindName(message);
