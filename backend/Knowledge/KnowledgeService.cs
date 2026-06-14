@@ -212,7 +212,7 @@ public partial class KnowledgeService
             .ToListAsync(cancellationToken);
 
         if (messages.Count == 0)
-            return new QueryResult(string.Empty, string.Empty, string.Empty);
+            return new QueryResult(query, query, query);
 
         var conversation = new Conversation(
             messages
