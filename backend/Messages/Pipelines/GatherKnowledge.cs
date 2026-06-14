@@ -36,11 +36,11 @@ public class GatherKnowledge : IConversationPipelineStep
             chat.ProjectId,
             cancellationToken);
 
-        AddUserPreferences(knowledge.Where(x => x.SourceType == KnowledgeSource.ChatUserPreference), combinedMessage);
-        AddFacts(knowledge.Where(x => x.SourceType == KnowledgeSource.ChatFact), combinedMessage);
-        AddDecisions(knowledge.Where(x => x.SourceType == KnowledgeSource.ChatDecision), combinedMessage);
-        AddSummaries(knowledge.Where(x => x.SourceType == KnowledgeSource.ChatSummary), combinedMessage);
-        AddDocuments(knowledge.Where(x => x.SourceType == KnowledgeSource.DocumentChunk), combinedMessage);
+        AddUserPreferences(knowledge, combinedMessage);
+        AddFacts(knowledge, combinedMessage);
+        AddDecisions(knowledge, combinedMessage);
+        AddSummaries(knowledge, combinedMessage);
+        AddDocuments(knowledge, combinedMessage);
 
         if (combinedMessage.Length > 0)
         {
@@ -81,11 +81,14 @@ public class GatherKnowledge : IConversationPipelineStep
         IEnumerable<KnowledgeEntry> knowledgeEntries,
         StringBuilder combinedMessage)
     {
-        var preferences = knowledgeEntries.ToArray();
+        var preferences = knowledgeEntries
+            .Where(x => x.SourceType == KnowledgeSource.ChatUserPreference)
+            .ToArray();
+
         if (preferences.Length == 0)
             return;
 
-        var json = JsonSerializer.Serialize(preferences, JsonSerializerOptions.Web);
+        var json = JsonSerializer.Serialize(preferences, jsonOptions);
 
         combinedMessage
             .AppendLine("### User Profile (long-term preferences, may be outdated)")
@@ -98,11 +101,14 @@ public class GatherKnowledge : IConversationPipelineStep
         IEnumerable<KnowledgeEntry> knowledgeEntries,
         StringBuilder combinedMessage)
     {
-        var facts = knowledgeEntries.ToArray();
+        var facts = knowledgeEntries
+            .Where(x => x.SourceType == KnowledgeSource.ChatFact)
+            .ToArray();
+
         if (facts.Length == 0)
             return;
 
-        var json = JsonSerializer.Serialize(facts, JsonSerializerOptions.Web);
+        var json = JsonSerializer.Serialize(facts, jsonOptions);
 
         combinedMessage
             .AppendLine("### Facts (high confidence, atomic)")
@@ -115,11 +121,14 @@ public class GatherKnowledge : IConversationPipelineStep
         IEnumerable<KnowledgeEntry> knowledgeEntries,
         StringBuilder combinedMessage)
     {
-        var decisions = knowledgeEntries.ToArray();
+        var decisions = knowledgeEntries
+            .Where(x => x.SourceType == KnowledgeSource.ChatDecision)
+            .ToArray();
+
         if (decisions.Length == 0)
             return;
 
-        var json = JsonSerializer.Serialize(decisions, JsonSerializerOptions.Web);
+        var json = JsonSerializer.Serialize(decisions, jsonOptions);
 
         combinedMessage
             .AppendLine("### Decisions (high confidence, atomic)")
@@ -132,11 +141,14 @@ public class GatherKnowledge : IConversationPipelineStep
         IEnumerable<KnowledgeEntry> knowledgeEntries,
         StringBuilder combinedMessage)
     {
-        var summaries = knowledgeEntries.ToArray();
+        var summaries = knowledgeEntries
+            .Where(x => x.SourceType == KnowledgeSource.ChatSummary)
+            .ToArray();
+
         if (summaries.Length == 0)
             return;
 
-        var json = JsonSerializer.Serialize(summaries, JsonSerializerOptions.Web);
+        var json = JsonSerializer.Serialize(summaries, jsonOptions);
 
         combinedMessage
             .AppendLine("### Summary (general overview, may be incomplete)")
@@ -149,7 +161,10 @@ public class GatherKnowledge : IConversationPipelineStep
         IEnumerable<KnowledgeEntry> knowledgeEntries,
         StringBuilder combinedMessage)
     {
-        var documents = knowledgeEntries.ToArray();
+        var documents = knowledgeEntries
+            .Where(x => x.SourceType == KnowledgeSource.DocumentChunk)
+            .ToArray();
+
         if (documents.Length == 0)
             return;
 
