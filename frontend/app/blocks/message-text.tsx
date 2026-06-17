@@ -2,6 +2,7 @@ import DOMPurify from 'dompurify';
 import hljs from 'highlight.js';
 import { Copy } from 'lucide-react';
 import { Marked, Renderer } from 'marked';
+import markedKatex from 'marked-katex-extension';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import {
@@ -29,6 +30,13 @@ renderer.code = function ({ text, lang }): string {
 };
 
 const marked = new Marked({ renderer });
+marked.use(
+    markedKatex({
+        throwOnError: false,
+        displayMode: true,
+        output: 'mathml',
+    }),
+);
 
 async function handleCopy(text: string) {
     await navigator.clipboard.writeText(text);
