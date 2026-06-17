@@ -69,6 +69,7 @@ public static class ServiceCollectionExtensions
                 new OpenAIClientOptions
                 {
                     Endpoint = new Uri(llmOptions.Value.Endpoint),
+                    NetworkTimeout = TimeSpan.FromMinutes(5),
                 });
         });
 
