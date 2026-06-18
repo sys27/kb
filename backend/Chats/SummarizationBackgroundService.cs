@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Backend.Knowledge;
+using Backend.Llama;
 using Backend.Messages;
 using Backend.Vectors;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +16,7 @@ public partial class SummarizationBackgroundService : BackgroundService
     private readonly IServiceScopeFactory scopeFactory;
     private readonly ILogger<SummarizationBackgroundService> logger;
     private readonly SummarizationOptions options;
-    private readonly IChatClient chatClient;
+    private readonly LlamaCppClient llamaCppClient;
     private readonly VectorStoreCollection<int, Embeddings> vectorCollection;
 
     private const string SummaryPrompt =
@@ -81,13 +82,13 @@ public partial class SummarizationBackgroundService : BackgroundService
         IServiceScopeFactory scopeFactory,
         ILogger<SummarizationBackgroundService> logger,
         IOptions<SummarizationOptions> options,
-        IChatClient chatClient,
+        LlamaCppClient llamaCppClient,
         VectorStoreCollection<int, Embeddings> vectorCollection)
     {
         this.scopeFactory = scopeFactory;
         this.logger = logger;
         this.options = options.Value;
-        this.chatClient = chatClient;
+        this.llamaCppClient = llamaCppClient;
         this.vectorCollection = vectorCollection;
     }
 
@@ -137,21 +138,23 @@ public partial class SummarizationBackgroundService : BackgroundService
                 LogSummarizationPrompt(prompt);
 
                 // TODO: summary of summaries?
-                var chatMessage = new ChatMessage(ChatRole.User, prompt);
-                var summary = await chatClient.GetResponseAsync(chatMessage, null, stoppingToken);
+                var summary = await llamaCppClient.GetResponse(
+                    LlamaMessage.ForUser(prompt),
+                    GetResponseOptions.NoThinking,
+                    stoppingToken);
 
-                LogSummaryForChat(chat.Id, summary.Text);
+                LogSummaryForChat(chat.Id, summary);
 
-                var summaryResponse = ParseSummaryResponse(summary.Text);
+                var summaryResponse = ParseSummaryResponse(summary);
                 if (summaryResponse is null)
                 {
-                    logger.LogError("Failed to parse summary response: {Response}", summary.Text);
+                    logger.LogError("Failed to parse summary response: {Response}", summary);
                     continue;
                 }
 
                 if (summaryResponse.Summary is null)
                 {
-                    logger.LogError("Summary is missing in response: {Response}", summary.Text);
+                    logger.LogError("Summary is missing in response: {Response}", summary);
                     continue;
                 }
 
