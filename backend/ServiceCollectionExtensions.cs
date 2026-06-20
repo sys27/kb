@@ -127,6 +127,7 @@ public static class ServiceCollectionExtensions
         services.Configure<IngestionOptions>(configuration.GetSection(IngestionOptions.Section));
         services.AddHostedService<DocumentDiscoveryBackgroundService>();
         services.AddHostedService<IngestionBackgroundService>();
+        services.AddScoped<IngestionService>();
 
         services.AddSingleton<FileExtensionContentTypeProvider>();
         services.AddSingleton<IContentTypeProvider, ContentTypeProvider>();

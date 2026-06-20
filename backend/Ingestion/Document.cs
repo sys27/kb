@@ -1,3 +1,4 @@
+using Backend.Chats;
 using Backend.Projects;
 
 namespace Backend.Ingestion;
@@ -16,9 +17,13 @@ public class Document
 
     public DocumentStatus Status { get; set; } = DocumentStatus.Pending;
 
-    public int ProjectId { get; init; }
+    public int? ProjectId { get; init; }
 
     public Project? Project { get; init; }
+
+    public int? ChatId { get; init; }
+
+    public Chat? Chat { get; init; }
 
     public ICollection<DocumentSection> DocumentSections { get; init; } = new List<DocumentSection>();
 
@@ -38,5 +43,17 @@ public class Document
         => Status = DocumentStatus.Ingested;
 
     public void MarkAsFailed()
-        => Status = DocumentStatus.Failed;
+    {
+        DocumentSections.Clear();
+        Status = DocumentStatus.Failed;
+    }
+
+    public string GetPath(string rootPath)
+    {
+        var directory = Project?.GetDirectoryName() ??
+                        Chat?.GetDirectoryName() ??
+                        throw new InvalidOperationException("Document must belong to a project or a chat");
+
+        return Path.Combine(rootPath, directory, Name);
+    }
 }

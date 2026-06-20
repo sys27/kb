@@ -1,11 +1,11 @@
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { MessageCircle, Plus, Search, Send, X } from 'lucide-react';
+import { FileText, Plus, Search, Send, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import z from 'zod';
+import { AddSourcesDialog } from '~/blocks/add-sources-dialog';
 import FollowUpQuestion from '~/blocks/follow-up-question';
-import MessageItem from '~/blocks/message-item';
-import MessageSkeletonItem from '~/blocks/message-skeleton-item';
+import { MessagesList } from '~/blocks/messages-list';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import {
@@ -14,13 +14,6 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyMedia,
-    EmptyTitle,
-} from '~/components/ui/empty';
 import {
     InputGroup,
     InputGroupAddon,
@@ -54,6 +47,7 @@ export default function Chat({ params }: Route.ComponentProps) {
     let { data: messages, isPending } = useQuery(messageOptionsForChat);
     let [webSearchEnabled, setWebSearchEnabled] = useState<Map<number, boolean>>(new Map());
     let enableWebSearch = webSearchEnabled.get(chatId) ?? false;
+    let [openUploadDialog, setOpenUploadDialog] = useState(false);
 
     let form = useForm({
         defaultValues: {
@@ -186,45 +180,11 @@ export default function Chat({ params }: Route.ComponentProps) {
     return (
         <div className="flex h-screen w-full flex-col gap-4 p-2">
             <ScrollArea className="flex-1 overflow-y-auto">
-                <div className="flex flex-col gap-2 p-1">
-                    {isPending ? (
-                        <>
-                            <MessageSkeletonItem />
-                            <MessageSkeletonItem />
-                            <MessageSkeletonItem />
-                        </>
-                    ) : messages && messages.length > 0 ? (
-                        (() => {
-                            let toolResults: Record<string, Message> = {};
-                            for (let m of messages) {
-                                if (m.messageTypeId === MessageType.toolResultId) {
-                                    let data = JSON.parse(m.text) as { callId: string };
-                                    toolResults[data.callId] = m;
-                                }
-                            }
-
-                            return messages.map(message => (
-                                <MessageItem
-                                    key={message.id}
-                                    message={message}
-                                    toolResults={toolResults}
-                                />
-                            ));
-                        })()
-                    ) : (
-                        <Empty>
-                            <EmptyHeader>
-                                <EmptyMedia variant="icon">
-                                    <MessageCircle />
-                                </EmptyMedia>
-                                <EmptyTitle>No Messages Yet</EmptyTitle>
-                                <EmptyDescription>
-                                    You haven&apos;t sent any messages yet. Get started by sending
-                                    your first message.
-                                </EmptyDescription>
-                            </EmptyHeader>
-                        </Empty>
-                    )}
+                <div className="mx-auto flex max-w-3xl flex-col gap-4 p-1">
+                    <MessagesList
+                        messages={messages}
+                        isPending={isPending}
+                    />
 
                     {followUpData?.questions.map(question => (
                         <FollowUpQuestion
@@ -237,13 +197,14 @@ export default function Chat({ params }: Route.ComponentProps) {
 
                 <div ref={bottomRef} />
             </ScrollArea>
+            {/* TODO: move to separate control */}
             <form
                 className="contents"
                 onSubmit={e => {
                     e.preventDefault();
                     form.handleSubmit();
                 }}>
-                <InputGroup className="flex-none">
+                <InputGroup className="mx-auto max-w-3xl flex-none">
                     <form.Field
                         name="message"
                         children={field => {
@@ -285,6 +246,11 @@ export default function Chat({ params }: Route.ComponentProps) {
                                         <Plus />
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="w-48">
+                                        <DropdownMenuItem
+                                            onSelect={() => setOpenUploadDialog(true)}>
+                                            <FileText />
+                                            Add Sources
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem
                                             onSelect={() =>
                                                 setWebSearchEnabled(prev => {
@@ -334,6 +300,12 @@ export default function Chat({ params }: Route.ComponentProps) {
                     </p>
                 </div>
             </form>
+
+            <AddSourcesDialog
+                chatId={chatId}
+                open={openUploadDialog}
+                onOpenChange={setOpenUploadDialog}
+            />
         </div>
     );
 }

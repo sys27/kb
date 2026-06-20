@@ -1,13 +1,18 @@
 using System.Text.Json;
 using Backend.Chats.Requests;
 using Backend.Chats.Responses;
+using Backend.Ingestion;
 using Backend.Llama;
 using Backend.Messages;
+using Backend.WebFetchHandlers;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using JsonOptions = Microsoft.AspNetCore.Http.Json.JsonOptions;
 
 namespace Backend.Chats;
 
-public static class ChatEndpoints
+public static partial class ChatEndpoints
 {
     public static IEndpointRouteBuilder MapChatEndpoints(this IEndpointRouteBuilder app)
     {
@@ -248,6 +253,103 @@ public static class ChatEndpoints
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("GenerateFollowUps")
             .WithSummary("Generate follow-up questions for a chat");
+
+        group.MapPost("/{chatId:int}/sources/upload", async (
+                int chatId,
+                ILoggerFactory loggerFactory,
+                IOptions<JsonOptions> jsonOptions,
+                KbDbContext context,
+                IngestionService ingestionService,
+                IFormFile? file,
+                CancellationToken cancellationToken) =>
+            {
+                var logger = loggerFactory.CreateLogger("ChatDocumentUpload");
+                if (file is null || file.Length == 0)
+                {
+                    logger.LogWarning("File is empty");
+                    return Results.BadRequest();
+                }
+
+                var chat = await context.Chats.FirstOrDefaultAsync(x => x.Id == chatId, cancellationToken);
+                if (chat is null)
+                {
+                    logger.LogWarning("Chat not found: {chatId}", chatId);
+                    return Results.NotFound();
+                }
+
+                var document = new Document
+                {
+                    Name = file.FileName,
+                    Status = DocumentStatus.Pending,
+                    ChatId = chat.Id,
+                    Chat = chat,
+                };
+                chat.AddDocument(document);
+
+                await using var stream = file.OpenReadStream();
+                await ingestionService.UploadDocument(document, stream, cancellationToken);
+                await ingestionService.Ingest(document, cancellationToken);
+
+                var uploadMessage = Message.ForDocument(chat.Id, document.Name, jsonOptions.Value.SerializerOptions);
+                chat.AddMessage(uploadMessage);
+                await context.SaveChangesAsync(cancellationToken);
+
+                return Results.Ok();
+            })
+            .DisableAntiforgery()
+            .WithMetadata(new RequestSizeLimitAttribute(100L * 1024 * 1024 * 1024))
+            .Produces(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName("UploadSourceToChat")
+            .WithSummary("Upload a source to a chat")
+            .WithRequestTimeout(TimeSpan.FromMinutes(5));
+
+        group.MapPost("/{chatId:int}/sources/add-web-site", async (
+                int chatId,
+                AddWebSiteRequest request,
+                ILoggerFactory loggerFactory,
+                IOptions<JsonOptions> jsonOptions,
+                KbDbContext context,
+                WebFetchHandlerFactory webFetchHandlerFactory,
+                IngestionService ingestionService,
+                CancellationToken cancellationToken) =>
+            {
+                var logger = loggerFactory.CreateLogger("ChatAddWebSite");
+                var chat = await context.Chats.FirstOrDefaultAsync(x => x.Id == chatId, cancellationToken);
+                if (chat is null)
+                {
+                    logger.LogWarning("Chat not found: {chatId}", chatId);
+                    return Results.NotFound();
+                }
+
+                var fetcher = webFetchHandlerFactory.GetHandler(request.Url);
+                var (fetchStream, fileName, _) = await fetcher.Fetch(request.Url, cancellationToken);
+
+                var document = new Document
+                {
+                    Name = fileName,
+                    Status = DocumentStatus.Pending,
+                    ChatId = chat.Id,
+                    Chat = chat,
+                };
+                chat.AddDocument(document);
+
+                await ingestionService.UploadDocument(document, fetchStream, cancellationToken);
+                await ingestionService.Ingest(document, cancellationToken);
+
+                var uploadMessage = Message.ForWebSite(chat.Id, request.Url, jsonOptions.Value.SerializerOptions);
+                chat.AddMessage(uploadMessage);
+                await context.SaveChangesAsync(cancellationToken);
+
+                return Results.Ok();
+            })
+            .Produces(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName("AddWebSiteToChat")
+            .WithSummary("Add a web site to a chat")
+            .WithRequestTimeout(TimeSpan.FromMinutes(5));
 
         return app;
     }

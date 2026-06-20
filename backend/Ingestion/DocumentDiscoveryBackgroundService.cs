@@ -68,7 +68,7 @@ public partial class DocumentDiscoveryBackgroundService : BackgroundService
 
                 foreach (var document in project.Documents.ToArray())
                 {
-                    if (File.Exists(Path.Combine(options.Path, project.GetDirectoryName(), document.Name)))
+                    if (File.Exists(document.GetPath(options.Path)))
                         continue;
 
                     project.Documents.Remove(document);

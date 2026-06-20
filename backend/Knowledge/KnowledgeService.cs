@@ -102,8 +102,8 @@ public partial class KnowledgeService
     public async Task<IReadOnlyList<KnowledgeEntry>> Search(
         KnowledgeSource source,
         string query,
-        int chatId,
         int? projectId,
+        int chatId,
         CancellationToken cancellationToken = default)
     {
         var queryResult = await GenerateQuery(chatId, query, cancellationToken);
@@ -120,6 +120,7 @@ public partial class KnowledgeService
                 KnowledgeSource.DocumentChunk,
                 queryResult,
                 projectId,
+                chatId,
                 cancellationToken);
 
             result.AddRange(documents);
@@ -131,6 +132,7 @@ public partial class KnowledgeService
                 KnowledgeSource.ChatSummary,
                 queryResult,
                 projectId,
+                chatId,
                 cancellationToken);
 
             result.AddRange(summaries);
@@ -142,6 +144,7 @@ public partial class KnowledgeService
                 KnowledgeSource.ChatFact,
                 queryResult,
                 projectId,
+                chatId,
                 cancellationToken);
 
             result.AddRange(facts);
@@ -153,6 +156,7 @@ public partial class KnowledgeService
                 KnowledgeSource.ChatDecision,
                 queryResult,
                 projectId,
+                chatId,
                 cancellationToken);
 
             result.AddRange(decisions);
@@ -164,6 +168,7 @@ public partial class KnowledgeService
                 KnowledgeSource.ChatUserPreference,
                 queryResult,
                 projectId,
+                chatId,
                 cancellationToken);
 
             result.AddRange(preferences);
@@ -176,12 +181,13 @@ public partial class KnowledgeService
         KnowledgeSource source,
         QueryResult query,
         int? projectId,
+        int chatId,
         CancellationToken cancellationToken = default)
     {
         Debug.Assert(BitOperations.PopCount((uint)source) == 1, "source must be a single source");
 
-        var result = await VectorSearch(source, query.VectorQuery, projectId, cancellationToken)
-            .Concat(BestMatching25Search(source, query.Bm25Query, projectId, cancellationToken))
+        var result = await VectorSearch(source, query.VectorQuery, projectId, chatId, cancellationToken)
+            .Concat(BestMatching25Search(source, query.Bm25Query, projectId, chatId, cancellationToken))
             .DistinctBy(x => (x.SourceId, x.SourceType))
             .ToArrayAsync(cancellationToken);
 
@@ -237,6 +243,7 @@ public partial class KnowledgeService
         KnowledgeSource source,
         string query,
         int? projectId,
+        int chatId,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -246,7 +253,7 @@ public partial class KnowledgeService
         var vectorOptions = new VectorSearchOptions<Embeddings>
         {
             Filter = projectId == null
-                ? e => e.ProjectId == null && e.SourceType == sourceId
+                ? e => e.ChatId == chatId && e.SourceType == sourceId
                 : e => e.ProjectId == projectId && e.SourceType == sourceId,
         };
         var vectorSearchResults = vectorCollection.SearchAsync(
@@ -276,6 +283,7 @@ public partial class KnowledgeService
         KnowledgeSource source,
         string query,
         int? projectId,
+        int chatId,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -289,7 +297,8 @@ public partial class KnowledgeService
                  SELECT FTIV.ROWID AS Id
                  FROM FullTextIndexVirt AS FTIV
                           INNER JOIN FullTextIndex AS FTI ON FTIV.ROWID = FTI.Id
-                 WHERE ({projectId} IS NULL AND FTI.ProjectId IS NULL OR FTI.ProjectId = {projectId})
+                 WHERE (({projectId} IS NOT NULL AND FTI.ProjectId = {projectId})
+                     OR ({projectId} IS NULL AND FTI.ChatId = {chatId}))
                    AND FTI.SourceType = {sourceId}
                    AND FullTextIndexVirt MATCH {escapedQuery}
                  ORDER BY bm25(FullTextIndexVirt)

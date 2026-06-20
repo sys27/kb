@@ -1,3 +1,4 @@
+using Backend.Ingestion;
 using Backend.Knowledge;
 using Microsoft.Extensions.VectorData;
 
@@ -21,12 +22,16 @@ public class Embeddings
     [VectorStoreData(IsIndexed = true)]
     public int? ProjectId { get; init; }
 
-    public static Embeddings ForDocumentChunk(int? projectId, int documentChunkId, string content)
+    [VectorStoreData(IsIndexed = true)]
+    public int? ChatId { get; init; }
+
+    public static Embeddings ForDocumentChunk(Document document, int documentChunkId, string content)
         => new Embeddings
         {
             Embedding = content,
             SourceId = documentChunkId,
-            ProjectId = projectId,
+            ProjectId = document.ProjectId,
+            ChatId = document.ChatId,
             SourceType = (int)KnowledgeSource.DocumentChunk,
         };
 

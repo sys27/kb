@@ -9,27 +9,8 @@ export const MessageType = {
     userRequestId: 5,
     toolCallId: 6,
     toolResultId: 7,
+    addSourceId: 8,
 } as const;
-
-const MessageTypeRoles: Record<(typeof MessageType)[keyof typeof MessageType], string> = {
-    [MessageType.systemId]: 'System',
-    [MessageType.assistantReasoningId]: 'Assistant',
-    [MessageType.assistantAnswerId]: 'Assistant',
-    [MessageType.userContextId]: 'User',
-    [MessageType.userRequestId]: 'User',
-    [MessageType.toolCallId]: 'Tool',
-    [MessageType.toolResultId]: 'Tool',
-};
-
-const MessageTypeKinds: Record<(typeof MessageType)[keyof typeof MessageType], string> = {
-    [MessageType.systemId]: '',
-    [MessageType.assistantReasoningId]: 'Reasoning',
-    [MessageType.assistantAnswerId]: '',
-    [MessageType.userContextId]: 'Context',
-    [MessageType.userRequestId]: '',
-    [MessageType.toolCallId]: '',
-    [MessageType.toolResultId]: '',
-};
 
 const MessageSchema = z.object({
     id: z.number(),
@@ -130,12 +111,4 @@ export async function* sendMessage(chatId: number, message: string, enableWebSea
     } finally {
         reader.releaseLock();
     }
-}
-
-export function getMessageRoleName(message: Message): string {
-    return MessageTypeRoles[message.messageTypeId];
-}
-
-export function getMessageKindName(message: Message): string {
-    return MessageTypeKinds[message.messageTypeId];
 }

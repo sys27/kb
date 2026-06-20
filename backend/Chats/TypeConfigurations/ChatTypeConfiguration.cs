@@ -26,5 +26,8 @@ public class ChatTypeConfiguration : IEntityTypeConfiguration<Chat>
             .HasForeignKey(d => d.ProjectId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("FK_Chats_Projects_ProjectId");
+
+        builder.Navigation(x => x.Messages)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

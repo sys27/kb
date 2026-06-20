@@ -29,7 +29,7 @@ export async function getProjectDocuments(projectId: number): Promise<ProjectDoc
     return z.array(ProjectDocumentSchema).parse(json);
 }
 
-export async function uploadDocument(projectId: number, file: File): Promise<void> {
+export async function projectUploadDocument(projectId: number, file: File): Promise<void> {
     let formData = new FormData();
     formData.append('file', file);
 
@@ -39,5 +39,18 @@ export async function uploadDocument(projectId: number, file: File): Promise<voi
     });
     if (!response.ok) {
         throw new Error('Failed to upload the document');
+    }
+}
+
+export async function projectAddWebSite(projectId: number, url: string): Promise<void> {
+    let response = await fetch(`/api/projects/${projectId}/documents/add-web-site`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url }),
+    });
+    if (!response.ok) {
+        throw new Error('Failed to add web site');
     }
 }

@@ -1,15 +1,19 @@
 using Backend.Messages;
 using Backend.Projects;
+using Backend.Ingestion;
 
 namespace Backend.Chats;
 
 public class Chat
 {
+    private readonly List<Message> messages = [];
+
     public int Id { get; init; }
 
     public required string Name { get; set; }
 
-    public ICollection<Message> Messages { get; init; } = [];
+    public IReadOnlyList<Message> Messages
+        => messages;
 
     public DateTime? LastMessageAt { get; set; }
 
@@ -29,9 +33,20 @@ public class Chat
 
     public ICollection<ChatUserPreference> UserPreferences { get; init; } = [];
 
+    public ICollection<Document> Documents { get; init; } = [];
+
+    public string GetDirectoryName()
+        => $"chat-{Id}";
+
     public void AddMessage(Message message)
     {
-        Messages.Add(message);
+        messages.Add(message);
+        LastMessageAt = message.Timestamp;
+    }
+
+    public void InsertMessage(int index, Message message)
+    {
+        messages.Insert(index, message);
         LastMessageAt = message.Timestamp;
     }
 
@@ -80,4 +95,7 @@ public class Chat
 
         ProjectId = projectId;
     }
+
+    public void AddDocument(Document document)
+        => Documents.Add(document);
 }

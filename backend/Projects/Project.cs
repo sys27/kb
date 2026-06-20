@@ -9,10 +9,13 @@ public class Project
 
     public required string Name { get; set; }
 
-    public ICollection<Chat> Chats { get; init; } = new List<Chat>();
+    public ICollection<Chat> Chats { get; init; } = [];
 
-    public ICollection<Document> Documents { get; init; } = new List<Document>();
+    public ICollection<Document> Documents { get; init; } = [];
 
     public string GetDirectoryName()
         => $"project-{Id}";
+
+    public void AddDocument(Document document)
+        => Documents.Add(document);
 }

@@ -1,5 +1,4 @@
 import { useForm } from '@tanstack/react-form';
-import { useMutation } from '@tanstack/react-query';
 import z from 'zod';
 import { Button } from '~/components/ui/button';
 import {
@@ -10,52 +9,47 @@ import {
     DialogHeader,
     DialogTitle,
 } from '~/components/ui/dialog';
-import { Field, FieldError, FieldGroup, FieldLabel } from '~/components/ui/field';
-import { Input } from '~/components/ui/input';
-import { Spinner } from '~/components/ui/spinner';
-import { projectDocumentsOptions, uploadDocument } from '~/services/project-documents';
+import { Field, FieldError } from '~/components/ui/field';
+import { Textarea } from '~/components/ui/textarea';
 
-interface UploadDocumentDialogProps {
-    projectId: number;
+interface AddWebSitesDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    addWebSites: (webSites: string[]) => void;
 }
 
 let FormSchema = z.object({
-    file: z.file().min(1),
+    webSites: z
+        .string()
+        .min(1)
+        .transform(value =>
+            value
+                .split('\n')
+                .map(site => site.trim())
+                .filter(site => site),
+        ),
 });
 
-type FormType = z.infer<typeof FormSchema>;
+type FormTypeInput = z.input<typeof FormSchema>;
 
-export default function UploadDocumentDialog({
-    projectId,
-    open,
-    onOpenChange,
-}: UploadDocumentDialogProps) {
+export function AddWebSitesDialog({ open, onOpenChange, addWebSites }: AddWebSitesDialogProps) {
     let form = useForm({
-        defaultValues: {} as FormType,
+        defaultValues: { webSites: '' } as FormTypeInput,
         validators: {
             onChange: FormSchema,
         },
         onSubmit: ({ value }) => {
-            mutation.mutate(value, {
-                onSuccess: () => {
-                    onOpenChange(false);
-                },
-            });
+            let model = FormSchema.parse(value);
+            addWebSites(model.webSites);
+            onOpenChange(false);
         },
-    });
-    let mutation = useMutation({
-        mutationFn: (form: FormType) => uploadDocument(projectId, form.file),
-        onSettled: (data, error, variables, onMutateResult, context) =>
-            context.client.invalidateQueries(projectDocumentsOptions(projectId)),
     });
 
     return (
         <Dialog
             open={open}
             onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className="min-w-lg">
                 <form
                     className="contents"
                     onSubmit={e => {
@@ -63,29 +57,26 @@ export default function UploadDocumentDialog({
                         form.handleSubmit();
                     }}>
                     <DialogHeader>
-                        <DialogTitle>Upload Document</DialogTitle>
+                        <DialogTitle>Add Web Sites</DialogTitle>
                     </DialogHeader>
-                    <FieldGroup>
+
+                    <div className="flex h-full w-full flex-col gap-2">
                         <form.Field
-                            name="file"
+                            name="webSites"
                             children={field => {
                                 const isInvalid =
                                     field.state.meta.isTouched && !field.state.meta.isValid;
 
                                 return (
                                     <Field data-invalid={isInvalid}>
-                                        <FieldLabel htmlFor={field.name}>File</FieldLabel>
-                                        <Input
-                                            type="file"
+                                        <Textarea
+                                            className="max-h-56 resize-none"
+                                            placeholder="Enter web sites..."
+                                            autoComplete="off"
                                             id={field.name}
                                             name={field.name}
                                             onBlur={field.handleBlur}
-                                            onChange={e => {
-                                                let file = e.target.files?.[0];
-                                                if (file) {
-                                                    field.handleChange(file);
-                                                }
-                                            }}
+                                            onChange={e => field.handleChange(e.target.value)}
                                             aria-invalid={isInvalid}
                                             required
                                         />
@@ -96,14 +87,13 @@ export default function UploadDocumentDialog({
                                 );
                             }}
                         />
-                    </FieldGroup>
+                        <span className="text-center text-sm text-muted-foreground">
+                            Enter one web site per line.
+                        </span>
+                    </div>
 
                     <DialogFooter>
-                        <Button
-                            type="submit"
-                            disabled={mutation.isPending}>
-                            {mutation.isPending && <Spinner data-icon="inline-start" />} Ok
-                        </Button>
+                        <Button type="submit">Ok</Button>
                         <DialogClose asChild>
                             <Button variant="outline">Cancel</Button>
                         </DialogClose>

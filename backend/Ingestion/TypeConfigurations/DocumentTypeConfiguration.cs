@@ -10,6 +10,11 @@ public class DocumentTypeConfiguration : IEntityTypeConfiguration<Document>
     {
         builder.ToTable("Documents");
 
+        builder.HasIndex(e => e.ProjectId, "IX_Documents_ProjectId");
+        builder.HasIndex(e => e.ChatId, "IX_Documents_ChatId");
+        builder.HasIndex(x => new { x.Name, x.ProjectId, x.ChatId }, "IX_Documents_Name_ProjectId_ChatId")
+            .IsUnique();
+
         builder.HasKey(e => e.Id)
             .HasName("PK_Documents");
 
@@ -26,15 +31,18 @@ public class DocumentTypeConfiguration : IEntityTypeConfiguration<Document>
 
         builder.Property(e => e.Status)
             .IsRequired()
-            .HasDefaultValue(DocumentStatus.Pending)
             .HasConversion(new EnumToStringConverter<DocumentStatus>());
-
-        builder.HasIndex(e => e.ProjectId, "IX_Documents_ProjectId");
 
         builder.HasOne(d => d.Project)
             .WithMany(p => p.Documents)
             .HasForeignKey(d => d.ProjectId)
             .OnDelete(DeleteBehavior.Cascade)
             .HasConstraintName("FK_Documents_Projects_ProjectId");
+
+        builder.HasOne(d => d.Chat)
+            .WithMany(p => p.Documents)
+            .HasForeignKey(d => d.ChatId)
+            .OnDelete(DeleteBehavior.Cascade)
+            .HasConstraintName("FK_Documents_Chats_ChatId");
     }
 }

@@ -1,12 +1,17 @@
+using System.Text.Json.Serialization;
 using Backend;
 using Backend.Chats;
 using Backend.Export;
 using Backend.Messages;
 using Backend.Messages.Pipelines;
 using Backend.Projects;
+using Microsoft.AspNetCore.Http.Json;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<JsonOptions>(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();

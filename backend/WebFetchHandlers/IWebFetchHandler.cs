@@ -1,4 +1,4 @@
-namespace Backend.Messages.Tools.WebSearch.FetchHandlers;
+namespace Backend.WebFetchHandlers;
 
 public interface IWebFetchHandler
 {

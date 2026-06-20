@@ -1,5 +1,5 @@
 using Backend.Messages.Tools.WebSearch;
-using Backend.Messages.Tools.WebSearch.FetchHandlers;
+using Backend.WebFetchHandlers;
 using Microsoft.Extensions.Options;
 
 namespace Backend.Messages.Pipelines;
@@ -17,7 +17,6 @@ public static class ConversationPipelineExtensions
         services.AddTransient<GatherKnowledge>();
         services.AddTransient<SendRequest>();
         services.AddTransient<ProcessResponse>();
-        services.AddTransient<AddResponsesToMessages>();
 
         services.AddTransient(provider => new ConversationPipeline([
             provider.GetRequiredService<GetChat>(),
@@ -25,7 +24,6 @@ public static class ConversationPipelineExtensions
             provider.GetRequiredService<GatherKnowledge>(),
             provider.GetRequiredService<SendRequest>(),
             provider.GetRequiredService<ProcessResponse>(),
-            provider.GetRequiredService<AddResponsesToMessages>(),
         ]));
 
         services.AddSingleton<IValidateOptions<WebSearchOptions>, WebSearchOptions>();

@@ -50,7 +50,7 @@ export function MessageTool({ callMessage, resultMessage }: MessageToolProps) {
                 onOpenChange={setIsOpen}
                 className="rounded-2xl border">
                 <CollapsibleTrigger asChild>
-                    <div className="flex cursor-pointer items-center gap-2 py-2 pl-4">
+                    <div className="flex cursor-pointer items-center gap-2 py-2 pl-4 text-sm">
                         <SearchIcon className="size-4" />
                         Web Search
                         {isOpen && (
@@ -71,6 +71,7 @@ export function MessageTool({ callMessage, resultMessage }: MessageToolProps) {
                                         <a
                                             href={result.url}
                                             target="_blank"
+                                            rel="noopener noreferrer"
                                             className="block max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
                                             {result.url}
                                         </a>

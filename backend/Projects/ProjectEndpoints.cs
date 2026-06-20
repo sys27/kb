@@ -1,12 +1,13 @@
 using Backend.Ingestion;
 using Backend.Projects.Requests;
 using Backend.Projects.Responses;
+using Backend.WebFetchHandlers;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Backend.Projects;
 
-public static class ProjectEndpoints
+public static partial class ProjectEndpoints
 {
     public static IEndpointRouteBuilder MapProjectEndpoints(this IEndpointRouteBuilder app)
     {
@@ -64,18 +65,15 @@ public static class ProjectEndpoints
         builder.MapPost("", async (
                 CreateProjectRequest request,
                 KbDbContext context,
-                IOptions<IngestionOptions> ingestionOptions,
                 CancellationToken cancellationToken) =>
             {
                 var project = request.ToEntity();
                 await context.Projects.AddAsync(project, cancellationToken);
                 await context.SaveChangesAsync(cancellationToken);
 
-                var directoryName = project.GetDirectoryName();
-                var directoryPath = Path.Combine(ingestionOptions.Value.Path, directoryName);
-                Directory.CreateDirectory(directoryPath);
+                var response = project.ToResponse();
 
-                return Results.CreatedAtRoute("GetProject", new { projectId = project.Id }, project);
+                return Results.CreatedAtRoute("GetProject", new { projectId = project.Id }, response);
             })
             .Produces<ProjectListResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -176,47 +174,91 @@ public static class ProjectEndpoints
 
         group.MapPost("/upload", async (
                 int projectId,
+                IFormFile? file,
                 ILoggerFactory loggerFactory,
                 KbDbContext context,
-                IOptions<IngestionOptions> ingestionOptions,
-                IFormFile? file,
+                IngestionService ingestionService,
                 CancellationToken cancellationToken) =>
             {
-                var logger = loggerFactory.CreateLogger("DocumentUpload");
+                var logger = loggerFactory.CreateLogger("ProjectDocumentUpload");
                 if (file is null || file.Length == 0)
                 {
                     logger.LogWarning("File is empty");
                     return Results.BadRequest();
                 }
 
-                var project = await context.Projects
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(x => x.Id == projectId, cancellationToken);
-
+                var project = await context.Projects.FirstOrDefaultAsync(x => x.Id == projectId, cancellationToken);
                 if (project is null)
                 {
                     logger.LogWarning("Project not found: {projectId}", projectId);
                     return Results.NotFound();
                 }
 
-                var filePath = Path.Combine(ingestionOptions.Value.Path, project.GetDirectoryName(), file.FileName);
-                if (File.Exists(filePath))
+                var document = new Document
                 {
-                    logger.LogWarning("File already exists: {filePath}", filePath);
-                    return Results.BadRequest();
-                }
+                    Name = file.FileName,
+                    Status = DocumentStatus.Pending,
+                    ProjectId = project.Id,
+                    Project = project,
+                };
+                project.AddDocument(document);
 
-                await using var stream = File.Open(filePath, FileMode.CreateNew, FileAccess.Write);
-                await file.CopyToAsync(stream, cancellationToken);
+                await using var stream = file.OpenReadStream();
+                await ingestionService.UploadDocument(document, stream, cancellationToken);
+
+                await context.SaveChangesAsync(cancellationToken);
 
                 return Results.Ok();
             })
             .DisableAntiforgery()
+            .WithMetadata(new RequestSizeLimitAttribute(100L * 1024 * 1024 * 1024))
             .Produces(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithName("UploadProjectDocument")
             .WithSummary("Upload a new document for a project");
+
+        group.MapPost("/add-web-site", async (
+                int projectId,
+                AddWebSiteRequest request,
+                ILoggerFactory loggerFactory,
+                KbDbContext context,
+                WebFetchHandlerFactory webFetchHandlerFactory,
+                IngestionService ingestionService,
+                CancellationToken cancellationToken) =>
+            {
+                var logger = loggerFactory.CreateLogger("ProjectAddWebSite");
+                var project = await context.Projects.FirstOrDefaultAsync(x => x.Id == projectId, cancellationToken);
+                if (project is null)
+                {
+                    logger.LogWarning("Project not found: {projectId}", projectId);
+                    return Results.NotFound();
+                }
+
+                var fetcher = webFetchHandlerFactory.GetHandler(request.Url);
+                var (fetchStream, fileName, _) = await fetcher.Fetch(request.Url, cancellationToken);
+
+                var document = new Document
+                {
+                    Name = fileName,
+                    Status = DocumentStatus.Pending,
+                    ProjectId = project.Id,
+                    Project = project,
+                };
+                project.AddDocument(document);
+
+                await using var stream = fetchStream;
+                await ingestionService.UploadDocument(document, stream, cancellationToken);
+                await context.SaveChangesAsync(cancellationToken);
+
+                return Results.Ok();
+            })
+            .Produces(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .WithName("AddWebSiteToProject")
+            .WithSummary("Add a web site to a project")
+            .WithRequestTimeout(TimeSpan.FromMinutes(5));
 
         return builder;
     }

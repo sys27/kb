@@ -2,7 +2,7 @@ using System.Numerics.Tensors;
 using System.Runtime.CompilerServices;
 using Backend.ContentExtractors;
 using Backend.Llama;
-using Backend.Messages.Tools.WebSearch.FetchHandlers;
+using Backend.WebFetchHandlers;
 using Microsoft.Extensions.Options;
 
 namespace Backend.Messages.Tools.WebSearch;
@@ -77,7 +77,7 @@ public class WebSearchService
         CancellationToken cancellationToken)
     {
         var handler = webFetchHandlerFactory.GetHandler(url);
-        var (stream, contentType) = await handler.Fetch(url, cancellationToken);
+        var (stream, _, contentType) = await handler.Fetch(url, cancellationToken);
 
         await using (stream)
         {

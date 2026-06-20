@@ -9,6 +9,7 @@ public class MessageType
     public const int UserRequestId = 5;
     public const int ToolCallId = 6;
     public const int ToolResultId = 7;
+    public const int AddSource = 8;
 
     public required int Id { get; init; }
 

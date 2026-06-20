@@ -24,7 +24,10 @@ public class SendRequest : IConversationPipelineStep
         chat.AddMessage(Message.ForUserRequest(chat.Id, requestText));
 
         var chatMessages = chat.Messages
-            .Where(x => x.MessageTypeId != MessageType.AssistantReasoningId)
+            .Where(x => x.MessageTypeId is MessageType.SystemId
+                or MessageType.AssistantAnswerId
+                or MessageType.UserContextId
+                or MessageType.UserRequestId)
             .Select(x => x.ToChatMessage());
 
         var chatOptions = new ChatOptions

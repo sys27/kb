@@ -64,30 +64,6 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Documents",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
-                    Title = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
-                    LastModifiedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    Hash = table.Column<byte[]>(type: "BLOB", maxLength: 32, nullable: false),
-                    Status = table.Column<string>(type: "TEXT", nullable: false, defaultValue: "Pending"),
-                    ProjectId = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Documents", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Documents_Projects_ProjectId",
-                        column: x => x.ProjectId,
-                        principalTable: "Projects",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ChatDecisions",
                 columns: table => new
                 {
@@ -164,6 +140,37 @@ namespace Backend.Migrations
                         name: "FK_ChatUserPreferences_Chats_ChatId",
                         column: x => x.ChatId,
                         principalTable: "Chats",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Documents",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Name = table.Column<string>(type: "TEXT", maxLength: 256, nullable: false),
+                    Title = table.Column<string>(type: "TEXT", maxLength: 256, nullable: true),
+                    LastModifiedAt = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Hash = table.Column<byte[]>(type: "BLOB", maxLength: 32, nullable: false),
+                    Status = table.Column<string>(type: "TEXT", nullable: false),
+                    ProjectId = table.Column<int>(type: "INTEGER", nullable: true),
+                    ChatId = table.Column<int>(type: "INTEGER", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Documents", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Documents_Chats_ChatId",
+                        column: x => x.ChatId,
+                        principalTable: "Chats",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Documents_Projects_ProjectId",
+                        column: x => x.ProjectId,
+                        principalTable: "Projects",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -247,7 +254,10 @@ namespace Backend.Migrations
                     { 2, "Reasoning", "Assistant" },
                     { 3, "Answer", "Assistant" },
                     { 4, "Context", "User" },
-                    { 5, "Request", "User" }
+                    { 5, "Request", "User" },
+                    { 6, "Call", "Tool" },
+                    { 7, "Result", "Tool" },
+                    { 8, "AddSource", "User" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -279,6 +289,17 @@ namespace Backend.Migrations
                 name: "IX_DocumentChunks_DocumentSectionId",
                 table: "DocumentChunks",
                 column: "DocumentSectionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Documents_ChatId",
+                table: "Documents",
+                column: "ChatId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Documents_Name_ProjectId_ChatId",
+                table: "Documents",
+                columns: new[] { "Name", "ProjectId", "ChatId" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Documents_ProjectId",
@@ -326,13 +347,13 @@ namespace Backend.Migrations
                 name: "DocumentSections");
 
             migrationBuilder.DropTable(
-                name: "Chats");
-
-            migrationBuilder.DropTable(
                 name: "MessageTypes");
 
             migrationBuilder.DropTable(
                 name: "Documents");
+
+            migrationBuilder.DropTable(
+                name: "Chats");
 
             migrationBuilder.DropTable(
                 name: "Projects");

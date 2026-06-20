@@ -22,22 +22,27 @@ namespace Backend.Migrations
                     Content    TEXT    NOT NULL,
                     SourceType INTEGER NOT NULL,
                     SourceId   INTEGER NOT NULL,
-                    ProjectId  INTEGER
+                    ProjectId  INTEGER,
+                    ChatId     INTEGER
                 );
 
                 CREATE INDEX IX_FullTextIndex_ProjectId
                     ON FullTextIndex (ProjectId);
+
+                CREATE INDEX IX_FullTextIndex_ChatId
+                    ON FullTextIndex (ChatId);
 
                 -- DocumentChunks
                 CREATE TRIGGER FullTextIndex_DocumentChunks_Insert
                     AFTER INSERT
                     ON DocumentChunks
                 BEGIN
-                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
+                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId, ChatId)
                     SELECT NEW.Content,
                            1,
                            NEW.Id,
-                           D.ProjectId
+                           D.ProjectId,
+                           D.ChatId
                     FROM DocumentSections DS
                              JOIN Documents D ON D.Id = DS.DocumentId
                     WHERE DS.Id = NEW.DocumentSectionId;
@@ -60,11 +65,12 @@ namespace Backend.Migrations
                     WHERE SourceType = 1
                       AND SourceId = OLD.Id;
 
-                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
+                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId, ChatId)
                     SELECT NEW.Content,
                            1,
                            NEW.Id,
-                           D.ProjectId
+                           D.ProjectId,
+                           D.ChatId
                     FROM DocumentSections DS
                              JOIN Documents D ON D.Id = DS.DocumentId
                     WHERE DS.Id = NEW.DocumentSectionId;
@@ -75,8 +81,8 @@ namespace Backend.Migrations
                     AFTER INSERT
                     ON Chats
                 BEGIN
-                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
-                    SELECT NEW.Summary, 2, NEW.Id, NEW.ProjectId
+                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId, ChatId)
+                    SELECT NEW.Summary, 2, NEW.Id, NEW.ProjectId, NULL
                     WHERE NEW.Summary IS NOT NULL;
                 END;
                 CREATE TRIGGER FullTextIndex_Chats_Delete
@@ -97,8 +103,8 @@ namespace Backend.Migrations
                     WHERE SourceType = 2
                       AND SourceId = OLD.Id;
 
-                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
-                    SELECT NEW.Summary, 2, NEW.Id, NEW.ProjectId
+                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId, ChatId)
+                    SELECT NEW.Summary, 2, NEW.Id, NEW.ProjectId, NULL
                     WHERE NEW.Summary IS NOT NULL;
                 END;
 
@@ -107,11 +113,12 @@ namespace Backend.Migrations
                     AFTER INSERT
                     ON ChatFacts
                 BEGIN
-                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
+                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId, ChatId)
                     SELECT NEW.Fact,
                            4,
                            NEW.Id,
-                           C.ProjectId
+                           C.ProjectId,
+                           NULL
                     FROM Chats C
                     WHERE C.Id = NEW.ChatId;
                 END;
@@ -133,11 +140,12 @@ namespace Backend.Migrations
                     WHERE SourceType = 4
                       AND SourceId = OLD.Id;
 
-                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
+                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId, ChatId)
                     SELECT NEW.Fact,
                            4,
                            NEW.Id,
-                           C.ProjectId
+                           C.ProjectId,
+                           NULL
                     FROM Chats C
                     WHERE C.Id = NEW.ChatId;
                 END;
@@ -147,11 +155,12 @@ namespace Backend.Migrations
                     AFTER INSERT
                     ON ChatDecisions
                 BEGIN
-                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
+                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId, ChatId)
                     SELECT 'Decision: ' || NEW.Decision || ' Reason: ' || NEW.Reason,
                            8,
                            NEW.Id,
-                           C.ProjectId
+                           C.ProjectId,
+                           NULL
                     FROM Chats C
                     WHERE C.Id = NEW.ChatId;
                 END;
@@ -173,11 +182,12 @@ namespace Backend.Migrations
                     WHERE SourceType = 8
                       AND SourceId = OLD.Id;
 
-                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
+                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId, ChatId)
                     SELECT 'Decision: ' || NEW.Decision || ' Reason: ' || NEW.Reason,
                            8,
                            NEW.Id,
-                           C.ProjectId
+                           C.ProjectId,
+                           NULL
                     FROM Chats C
                     WHERE C.Id = NEW.ChatId;
                 END;
@@ -187,11 +197,12 @@ namespace Backend.Migrations
                     AFTER INSERT
                     ON ChatUserPreferences
                 BEGIN
-                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
+                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId, ChatId)
                     SELECT NEW.Preference,
                            16,
                            NEW.Id,
-                           C.ProjectId
+                           C.ProjectId,
+                           NULL
                     FROM Chats C
                     WHERE C.Id = NEW.ChatId;
                 END;
@@ -213,11 +224,12 @@ namespace Backend.Migrations
                     WHERE SourceType = 16
                       AND SourceId = OLD.Id;
 
-                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId)
+                    INSERT INTO FullTextIndex(Content, SourceType, SourceId, ProjectId, ChatId)
                     SELECT NEW.Preference,
                            16,
                            NEW.Id,
-                           C.ProjectId
+                           C.ProjectId,
+                           NULL
                     FROM Chats C
                     WHERE C.Id = NEW.ChatId;
                 END;
@@ -292,6 +304,7 @@ namespace Backend.Migrations
                 DROP TRIGGER IF EXISTS FullTextIndex_ChatUserPreferences_Update;
 
                 DROP INDEX IF EXISTS IX_FullTextIndex_ProjectId;
+                DROP INDEX IF EXISTS IX_FullTextIndex_ChatIdId;
                 DROP TABLE IF EXISTS FullTextIndex;
                 """);
         }

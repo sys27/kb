@@ -1,26 +1,21 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Backend.Chats;
 using Backend.Knowledge;
+using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.Options;
 
 namespace Backend.Messages.Pipelines;
 
 public class GatherKnowledge : IConversationPipelineStep
 {
     private readonly KnowledgeService knowledgeService;
-    private readonly JsonSerializerOptions jsonOptions;
+    private readonly JsonSerializerOptions jsonSerializerOptions;
 
-    public GatherKnowledge(KnowledgeService knowledgeService)
+    public GatherKnowledge(KnowledgeService knowledgeService, IOptions<JsonOptions> jsonOptions)
     {
         this.knowledgeService = knowledgeService;
-        this.jsonOptions = new JsonSerializerOptions(JsonSerializerOptions.Web)
-        {
-            Converters =
-            {
-                new JsonStringEnumConverter()
-            }
-        };
+        this.jsonSerializerOptions = jsonOptions.Value.SerializerOptions;
     }
 
     public async Task ExecuteAsync(ConversationPipelineContext context, CancellationToken cancellationToken = default)
@@ -32,8 +27,8 @@ public class GatherKnowledge : IConversationPipelineStep
         var knowledge = await knowledgeService.Search(
             KnowledgeSource.All,
             requestText,
-            chat.Id,
             chat.ProjectId,
+            chat.Id,
             cancellationToken);
 
         AddUserPreferences(knowledge, combinedMessage);
@@ -88,7 +83,7 @@ public class GatherKnowledge : IConversationPipelineStep
         if (preferences.Length == 0)
             return;
 
-        var json = JsonSerializer.Serialize(preferences, jsonOptions);
+        var json = JsonSerializer.Serialize(preferences, jsonSerializerOptions);
 
         combinedMessage
             .AppendLine("### User Profile (long-term preferences, may be outdated)")
@@ -108,7 +103,7 @@ public class GatherKnowledge : IConversationPipelineStep
         if (facts.Length == 0)
             return;
 
-        var json = JsonSerializer.Serialize(facts, jsonOptions);
+        var json = JsonSerializer.Serialize(facts, jsonSerializerOptions);
 
         combinedMessage
             .AppendLine("### Facts (high confidence, atomic)")
@@ -128,7 +123,7 @@ public class GatherKnowledge : IConversationPipelineStep
         if (decisions.Length == 0)
             return;
 
-        var json = JsonSerializer.Serialize(decisions, jsonOptions);
+        var json = JsonSerializer.Serialize(decisions, jsonSerializerOptions);
 
         combinedMessage
             .AppendLine("### Decisions (high confidence, atomic)")
@@ -148,7 +143,7 @@ public class GatherKnowledge : IConversationPipelineStep
         if (summaries.Length == 0)
             return;
 
-        var json = JsonSerializer.Serialize(summaries, jsonOptions);
+        var json = JsonSerializer.Serialize(summaries, jsonSerializerOptions);
 
         combinedMessage
             .AppendLine("### Summary (general overview, may be incomplete)")
@@ -168,7 +163,7 @@ public class GatherKnowledge : IConversationPipelineStep
         if (documents.Length == 0)
             return;
 
-        var json = JsonSerializer.Serialize(documents, jsonOptions);
+        var json = JsonSerializer.Serialize(documents, jsonSerializerOptions);
 
         combinedMessage
             .AppendLine("### Related Documents (external knowledge, may be partial or noisy)")

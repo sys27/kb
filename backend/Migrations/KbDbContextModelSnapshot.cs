@@ -152,6 +152,9 @@ namespace Backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("ChatId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<byte[]>("Hash")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -165,14 +168,12 @@ namespace Backend.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ProjectId")
+                    b.Property<int?>("ProjectId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValue("Pending");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Title")
                         .HasMaxLength(256)
@@ -180,6 +181,11 @@ namespace Backend.Migrations
 
                     b.HasKey("Id")
                         .HasName("PK_Documents");
+
+                    b.HasIndex(new[] { "ChatId" }, "IX_Documents_ChatId");
+
+                    b.HasIndex(new[] { "Name", "ProjectId", "ChatId" }, "IX_Documents_Name_ProjectId_ChatId")
+                        .IsUnique();
 
                     b.HasIndex(new[] { "ProjectId" }, "IX_Documents_ProjectId");
 
@@ -326,6 +332,12 @@ namespace Backend.Migrations
                             Id = 7,
                             Kind = "Result",
                             Role = "Tool"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Kind = "AddSource",
+                            Role = "User"
                         });
                 });
 
@@ -407,12 +419,19 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Ingestion.Document", b =>
                 {
+                    b.HasOne("Backend.Chats.Chat", "Chat")
+                        .WithMany("Documents")
+                        .HasForeignKey("ChatId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("FK_Documents_Chats_ChatId");
+
                     b.HasOne("Backend.Projects.Project", "Project")
                         .WithMany("Documents")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("FK_Documents_Projects_ProjectId");
+
+                    b.Navigation("Chat");
 
                     b.Navigation("Project");
                 });
@@ -465,6 +484,8 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Chats.Chat", b =>
                 {
                     b.Navigation("Decisions");
+
+                    b.Navigation("Documents");
 
                     b.Navigation("Facts");
 
