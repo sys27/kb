@@ -3,14 +3,14 @@ ARG BUILD_CONFIGURATION=Release
 
 WORKDIR /src
 COPY ["./backend/Backend.slnx", "./"]
-COPY ["./backend/Backend.csproj", "./"]
+COPY ["./backend/Backend/Backend.csproj", "./Backend/"]
 RUN dotnet restore "Backend.slnx"
 
 COPY ["./backend/", "./"]
 RUN dotnet build "./Backend.slnx" --nologo --no-restore -c $BUILD_CONFIGURATION
 
 FROM build AS publish
-RUN dotnet publish "./Backend.csproj" \
+RUN dotnet publish "./Backend/Backend.csproj" \
     --nologo --no-restore --no-build -c $BUILD_CONFIGURATION \
     -o /app/publish /p:UseAppHost=false
 
