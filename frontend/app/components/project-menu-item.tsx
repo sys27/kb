@@ -29,7 +29,7 @@ import {
 import { Spinner } from '~/components/ui/spinner';
 import { chatsOptions } from '~/services/chats';
 import { deleteProject, projectsOptions, type Project } from '~/services/projects';
-import { AddSourcesDialog } from './add-sources-dialog';
+import { AddSourcesDialog } from './sources/add-sources-dialog';
 import ChatMenuItem from './chat-menu-item';
 import ProjectEditDialog from './project-edit-dialog';
 

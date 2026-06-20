@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { Check, FileText, Globe, TriangleAlert } from 'lucide-react';
+import { Check, File as FileIcon, FileText, Globe, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '~/components/ui/button';
 import { ButtonGroup } from '~/components/ui/button-group';
@@ -28,6 +28,7 @@ import {
     projectDocumentsOptions,
     projectUploadDocument,
 } from '~/services/project-documents';
+import { AddTextDialog } from './add-text-dialog';
 import { AddWebSitesDialog } from './add-web-sites-dialog';
 
 interface AddSourcesDialogProps {
@@ -79,6 +80,7 @@ async function submitSource({
 export function AddSourcesDialog({ projectId, chatId, open, onOpenChange }: AddSourcesDialogProps) {
     let [sources, setSources] = useState<Source[]>([]);
     let [openWebSitesDialog, setOpenWebSitesDialog] = useState(false);
+    let [openTextDialog, setOpenTextDialog] = useState(false);
 
     let sourceMutation = useMutation({
         mutationFn: submitSource,
@@ -123,6 +125,7 @@ export function AddSourcesDialog({ projectId, chatId, open, onOpenChange }: AddS
         if (!open) {
             setSources([]);
             setOpenWebSitesDialog(false);
+            setOpenTextDialog(false);
         }
     }, [open]);
 
@@ -175,7 +178,7 @@ export function AddSourcesDialog({ projectId, chatId, open, onOpenChange }: AddS
                             variant="outline"
                             asChild>
                             <label>
-                                <FileText />
+                                <FileIcon />
                                 Add Documents
                                 <input
                                     type="file"
@@ -193,6 +196,12 @@ export function AddSourcesDialog({ projectId, chatId, open, onOpenChange }: AddS
                             onClick={() => setOpenWebSitesDialog(true)}>
                             <Globe />
                             Add Web Sites
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setOpenTextDialog(true)}>
+                            <FileText />
+                            Add Text
                         </Button>
                     </ButtonGroup>
 
@@ -284,6 +293,21 @@ export function AddSourcesDialog({ projectId, chatId, open, onOpenChange }: AddS
                                 object: webSite,
                             })),
                         );
+                    }}
+                />
+
+                <AddTextDialog
+                    open={openTextDialog}
+                    onOpenChange={setOpenTextDialog}
+                    addText={text => {
+                        let fileName = `${crypto.randomUUID()}.txt`;
+                        addSources([
+                            {
+                                type: 'document' as const,
+                                name: fileName,
+                                object: new File([text], fileName, { type: 'text/plain' }),
+                            },
+                        ]);
                     }}
                 />
             </DialogContent>
