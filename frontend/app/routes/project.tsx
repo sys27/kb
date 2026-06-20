@@ -8,12 +8,12 @@ import {
     UserCheck,
     UserStar,
 } from 'lucide-react';
-import ProjectChatsList from '~/blocks/project-chats-list';
-import { ProjectDecisionsList } from '~/blocks/project-decisions-list';
-import ProjectDocumentsList from '~/blocks/project-documents-list';
-import { ProjectFactsList } from '~/blocks/project-facts-list';
-import { ProjectPreferencesList } from '~/blocks/project-preferences-list';
-import { ProjectTopicsList } from '~/blocks/project-topics-list';
+import ProjectChatsList from '~/components/project-chats-list';
+import { ProjectDecisionsList } from '~/components/project-decisions-list';
+import ProjectDocumentsList from '~/components/project-documents-list';
+import { ProjectFactsList } from '~/components/project-facts-list';
+import { ProjectPreferencesList } from '~/components/project-preferences-list';
+import { ProjectTopicsList } from '~/components/project-topics-list';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { projectsOptions } from '~/services/projects';
 import type { Route } from './+types/project';

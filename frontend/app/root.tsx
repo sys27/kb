@@ -10,9 +10,9 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TooltipProvider } from '~/components/ui/tooltip';
 import type { Route } from './+types/root';
-import { ThemeProvider } from './blocks/theme-provider';
 
 import './app.css';
+import { ThemeProvider } from './components/theme-provider';
 
 let queryClient = new QueryClient();
 

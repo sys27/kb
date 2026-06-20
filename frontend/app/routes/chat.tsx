@@ -3,9 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileText, Plus, Search, Send, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import z from 'zod';
-import { AddSourcesDialog } from '~/blocks/add-sources-dialog';
-import FollowUpQuestion from '~/blocks/follow-up-question';
-import { MessagesList } from '~/blocks/messages-list';
+import { AddSourcesDialog } from '~/components/add-sources-dialog';
+import FollowUpQuestion from '~/components/follow-up-question';
+import { MessagesList } from '~/components/messages-list';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import {
