@@ -14,7 +14,7 @@ RUN dotnet publish "./Backend/Backend.csproj" \
     --nologo --no-restore --no-build -c $BUILD_CONFIGURATION \
     -o /app/publish /p:UseAppHost=false
 
-FROM node:26.3.0-alpine AS node
+FROM node:26.3.1-alpine AS node
 WORKDIR /src
 COPY ["./frontend/package.json", "./frontend/package-lock.json", "./"]
 RUN npm ci
