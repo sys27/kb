@@ -1,3 +1,5 @@
 <Solution>
   <Project Path="Backend/Backend.csproj" />
+  <Project Path="LlamaCpp/LlamaCpp.csproj" />
+  <Project Path="LlamaCppTests/LlamaCppTests.csproj" />
 </Solution>

@@ -4,10 +4,10 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["./backend/Backend.slnx", "./"]
 COPY ["./backend/Backend/Backend.csproj", "./Backend/"]
-RUN dotnet restore "Backend.slnx"
+RUN dotnet restore "./Backend/Backend.csproj"
 
 COPY ["./backend/", "./"]
-RUN dotnet build "./Backend.slnx" --nologo --no-restore -c $BUILD_CONFIGURATION
+RUN dotnet build "./Backend/Backend.csproj" --nologo --no-restore -c $BUILD_CONFIGURATION
 
 FROM build AS publish
 RUN dotnet publish "./Backend/Backend.csproj" \
