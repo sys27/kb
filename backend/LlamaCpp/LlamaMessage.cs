@@ -1,4 +1,4 @@
-namespace Backend.Llama;
+namespace LlamaCpp;
 
 public sealed record LlamaMessage(string Role, string Content)
 {

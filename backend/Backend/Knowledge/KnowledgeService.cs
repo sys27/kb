@@ -2,9 +2,9 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using Backend.Llama;
 using Backend.Messages;
 using Backend.Vectors;
+using LlamaCpp;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.VectorData;
 

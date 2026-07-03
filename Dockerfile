@@ -4,6 +4,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["./backend/Backend.slnx", "./"]
 COPY ["./backend/Backend/Backend.csproj", "./Backend/"]
+COPY ["./backend/LlamaCpp/LlamaCpp.csproj", "./LlamaCpp/"]
 RUN dotnet restore "./Backend/Backend.csproj"
 
 COPY ["./backend/", "./"]

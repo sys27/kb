@@ -1,10 +1,10 @@
-namespace Backend.Llama;
+namespace LlamaCpp;
 
 public class GetResponseOptions
 {
-    public string? Model { get; set; }
+    public string? Model { get; init; }
 
-    public bool EnableThinking { get; set; } = true;
+    public bool EnableThinking { get; init; } = true;
 
     public static GetResponseOptions NoThinking
         => new GetResponseOptions

@@ -40,4 +40,8 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\LlamaCpp\LlamaCpp.csproj" />
+  </ItemGroup>
+
 </Project>

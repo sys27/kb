@@ -1,8 +1,8 @@
 using System.Numerics.Tensors;
 using System.Runtime.CompilerServices;
 using Backend.ContentExtractors;
-using Backend.Llama;
 using Backend.WebFetchHandlers;
+using LlamaCpp;
 using Microsoft.Extensions.Options;
 
 namespace Backend.Messages.Tools.WebSearch;
@@ -90,8 +90,8 @@ public class WebSearchService
                 .ToArray();
 
             var similarChunks = new List<string>();
-            var (_, queryEmbedding) = await llamaCppClient.Embedding(query, cancellationToken);
-            var contentEmbeddings = await llamaCppClient.Embeddings(chunkedContent, cancellationToken);
+            var (_, queryEmbedding) = await llamaCppClient.Embedding(query, null, cancellationToken);
+            var contentEmbeddings = await llamaCppClient.Embeddings(chunkedContent, null, cancellationToken);
             foreach (var (chunk, contentEmbedding) in contentEmbeddings)
             {
                 var similarity = TensorPrimitives.CosineSimilarity(queryEmbedding, contentEmbedding);

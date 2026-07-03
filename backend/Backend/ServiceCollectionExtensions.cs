@@ -3,8 +3,8 @@ using Backend.Chats;
 using Backend.ContentExtractors;
 using Backend.Ingestion;
 using Backend.Knowledge;
-using Backend.Llama;
 using Backend.Vectors;
+using LlamaCpp;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -93,11 +93,18 @@ public static class ServiceCollectionExtensions
         });
 
         services
-            .AddHttpClient<LlamaCppClient>((provider, client) =>
+            .AddHttpClient<LlamaCppClient, LlamaCppClient>((client, provider) =>
             {
                 var options = provider.GetRequiredService<IOptions<LlmOptions>>();
 
                 client.BaseAddress = new Uri(options.Value.Endpoint);
+
+                return new LlamaCppClient(client, new LlamaCppClientOptions
+                {
+                    Model = options.Value.Model,
+                    EmbeddingsModel = options.Value.EmbeddingModel,
+                    RerankingModel = options.Value.RerankingModel,
+                });
             })
             .AddStandardResilienceHandler(options =>
             {

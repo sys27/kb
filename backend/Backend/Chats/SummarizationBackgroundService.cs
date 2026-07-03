@@ -1,11 +1,10 @@
 using System.Text;
 using System.Text.Json;
 using Backend.Knowledge;
-using Backend.Llama;
 using Backend.Messages;
 using Backend.Vectors;
+using LlamaCpp;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
 
