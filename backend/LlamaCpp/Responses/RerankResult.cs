@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace LlamaCpp;
+namespace LlamaCpp.Responses;
 
 internal sealed record RerankResult(
     int Index,

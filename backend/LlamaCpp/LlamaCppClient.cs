@@ -1,6 +1,8 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
+using LlamaCpp.Requests;
+using LlamaCpp.Responses;
 
 namespace LlamaCpp;
 
@@ -15,8 +17,8 @@ public class LlamaCppClient
         this.clientOptions = clientOptions;
     }
 
-    public async Task<EmbeddingResult<T>> Embedding<T>(
-        T input,
+    public async Task<EmbeddingResult> Embedding(
+        string input,
         EmbeddingOptions? options = null,
         CancellationToken cancellationToken = default)
     {
@@ -25,8 +27,8 @@ public class LlamaCppClient
         return embeddings[0];
     }
 
-    public async Task<IReadOnlyList<EmbeddingResult<T>>> Embeddings<T>(
-        IReadOnlyList<T> documents,
+    public async Task<IReadOnlyList<EmbeddingResult>> Embeddings(
+        IReadOnlyList<string> documents,
         EmbeddingOptions? options = null,
         CancellationToken cancellationToken = default)
     {
@@ -41,11 +43,7 @@ public class LlamaCppClient
         if (model is null)
             throw new InvalidOperationException("No embedding model specified");
 
-        var request = new
-        {
-            model,
-            input = documents,
-        };
+        var request = new EmbeddingRequest(model, documents);
         var httpResponse = await httpClient.PostAsJsonAsync("/embeddings", request, cancellationToken);
         httpResponse.EnsureSuccessStatusCode();
 
@@ -57,7 +55,7 @@ public class LlamaCppClient
             throw new InvalidOperationException("Response length does not match input length");
 
         var embeddings = response
-            .Select(x => new EmbeddingResult<T>(
+            .Select(x => new EmbeddingResult(
                 documents[x.Index],
                 x.Embedding.FirstOrDefault()?.Select(e => (float)e).ToArray() ?? []))
             .ToArray();
@@ -93,12 +91,10 @@ public class LlamaCppClient
         if (model is null)
             throw new InvalidOperationException("No reranking model specified");
 
-        var request = new
-        {
+        var request = new RerankRequest(
             model,
             query,
-            documents = documents.Select(documentSelector),
-        };
+            documents.Select(documentSelector).ToArray());
         var httpResponse = await httpClient.PostAsJsonAsync("/reranking", request, cancellationToken);
         httpResponse.EnsureSuccessStatusCode();
 

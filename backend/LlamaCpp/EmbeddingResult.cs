@@ -1,3 +1,3 @@
 namespace LlamaCpp;
 
-public record EmbeddingResult<T>(T Value, float[] Embedding);
+public record EmbeddingResult(string Value, float[] Embedding);
