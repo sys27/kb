@@ -19,7 +19,7 @@
     "clsx": "^2.1.1",
     "dompurify": "^3.4.11",
     "highlight.js": "^11.11.1",
-    "isbot": "^5.1.43",
+    "isbot": "^5.1.44",
     "lucide-react": "^1.17.0",
     "marked": "^18.0.5",
     "marked-katex-extension": "^5.1.10",
