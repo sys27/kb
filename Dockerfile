@@ -22,7 +22,7 @@ RUN npm ci
 COPY ["./frontend/", "./"]
 RUN npm run build
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0.9 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.10 AS final
 EXPOSE 80
 HEALTHCHECK --interval=5s --timeout=5s CMD wget http://localhost/health -q -O - > /dev/null 2>&1
 
