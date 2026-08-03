@@ -24,7 +24,7 @@
     <PackageReference Include="PdfPig" Version="0.1.15" />
     <PackageReference Include="Riok.Mapperly" Version="4.3.1" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.16.11" />
-    <PackageReference Include="SmartReader" Version="0.11.0" />
+    <PackageReference Include="SmartReader" Version="0.11.1" />
     <PackageReference Include="VersOne.Epub" Version="3.3.6" />
   </ItemGroup>
 
